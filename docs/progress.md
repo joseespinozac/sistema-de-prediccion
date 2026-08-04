@@ -35,6 +35,12 @@
 
 ## Shipped
 
+### v0.3.0 — Visual refresh estilo Flowbite Admin Dashboard
+
+| Date | Version | Feature | Description | Commit | Notes |
+|---|---|---|---|---|---|
+| 2026-08-04 | v0.3.0 | `ui-flowbite-redesign` | Rediseño visual completo siguiendo el lenguaje de Flowbite Admin Dashboard: shell con sidebar w-64 + iconos Lucide + topbar sticky con breadcrumb/search/user dropdown; dashboard con stat cards row; connect con step indicator; accounts con tabla row hover + iconos en acciones + modales con icon header; login con brand header + iconos en inputs. Layout sticky: sidebar + topbar fijos, solo el content slot scrollea. Sin agregar Flowbite como dependencia — replicado con utility classes de Tailwind + Lucide via CDN. Documentación: `docs/design-system.md` actualizado con §0 (inspiración), §8 (iconografía), §9 (referencia al page-template); nuevo `docs/page-template.md` con el template canónico para páginas nuevas. | `d5d946b`+`61036d7`+`dd47a80`+`7a67fa6`+`cfe269d` | 5 commits en development. Refs: [`docs/page-template.md`](page-template.md), [`docs/design-system.md`](design-system.md#8-iconografía-con-lucide). |
+
 ### v0.2.0 — Gestión de cuentas (rename + delete + reactivar)
 
 | Date | Version | Feature | Description | Commit | Notes |

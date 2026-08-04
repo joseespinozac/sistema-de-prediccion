@@ -19,8 +19,16 @@
      `x-show`, `x-for`, `x-text`).
    - **ApexCharts 3** para gráficas (histórico, predicción,
      banda de confianza).
+   - **Lucide Icons** vía CDN (`<i data-lucide="nombre">`) para
+     iconografía consistente en toda la UI. Ver §8 para uso.
    - **Sin frameworks SPA** (no React, no Vue, no Angular) — la
      UI es server-rendered y se hidrata con Alpine.
+   - **Inspirado en Flowbite Admin Dashboard.** El layout visual
+     (sidebar fijo + topbar sticky + content scrollable, stat
+     cards, tablas con hover, modales con iconos, badges de
+     estado) replica el lenguaje visual de Flowbite sin agregar
+     la dependencia — todo se hace con utility classes de
+     Tailwind. Para referencia: <https://flowbite-admin-dashboard.vercel.app/>.
 
 2. **Idioma de la UI**
    - **Toda** copia visible para el usuario está en **español
@@ -427,7 +435,165 @@ El click en cualquier item del drawer también cierra
 
 ---
 
-## 8. Reglas de copy (es-MX)
+## 8. Iconografía con Lucide
+
+### Setup
+
+```html
+<!-- En <head>, antes del script defer de Alpine (orden importa: Lucide primero) -->
+<script defer src="https://unpkg.com/lucide@latest"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+```
+
+### Uso básico
+
+```html
+<i data-lucide="home" class="w-5 h-5"></i>
+```
+
+Lucide reemplaza el `<i>` por el SVG correspondiente cuando se llama
+`createIcons()`. El shell hace esto automáticamente al inicializar
+Alpine.
+
+### Tamaños estándar
+
+| Tamaño | Clases Tailwind | Uso |
+|---|---|---|
+| Pequeño | `w-4 h-4` (16px) | Botones con icono + texto, headers de sección, badges |
+| Mediano | `w-5 h-5` (20px) | Items de sidebar, items de menú, iconos de card |
+| Grande | `w-6 h-6` (24px) | Botones standalone (ej. hamburger), iconos destacados |
+| XL | `w-7 h-7` (28px) | Iconos de página (header), empty states |
+
+### Colores (foreground)
+
+Lucide usa `currentColor` para el stroke, así que se controla con
+clases de color Tailwind:
+
+| Color | Clases |
+|---|---|
+| Default (gris) | `text-gray-400` (en headers), `text-gray-500` (en items) |
+| Brand | `text-blue-600` |
+| Success | `text-emerald-600` |
+| Warning | `text-amber-600` |
+| Danger | `text-red-600` |
+| White (sobre bg oscuro) | `text-white` |
+
+Para iconos dentro de un círculo con fondo de color, usar el patrón
+`bg-{color}-50 text-{color}-600`:
+
+```html
+<span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600">
+  <i data-lucide="building-2" class="w-5 h-5"></i>
+</span>
+```
+
+### Contenido dinámico (renderizado por Alpine)
+
+Cuando `x-for` o `x-show` crea nuevos nodos con iconos después de
+la carga inicial, hay que re-escanear el DOM. Dos opciones:
+
+**Opción A — global en cada `<main>`** (preferida para páginas con mucho contenido dinámico):
+
+```html
+<main x-data="pageComponent()" x-init="init(); $nextTick(() => lucide.createIcons())">
+```
+
+Esto re-escanea después de cada cambio de state. Costo: ~1ms por
+scan. Aceptable para nuestra escala.
+
+**Opción B — selectiva después de operaciones específicas:**
+
+```js
+await this.loadData();
+this.$nextTick(() => lucide.createIcons());
+```
+
+Usar cuando el costo de re-escanear todo el DOM es alto.
+
+### Catálogo de iconos usados en el proyecto
+
+| Icono | Uso |
+|---|---|
+| `trending-up` | Logo de la app (header + login) |
+| `layout-dashboard` | Item de sidebar: Dashboard |
+| `building-2` | Item de sidebar: Cuentas |
+| `plug` | Item de sidebar: Conectar Google |
+| `menu` | Botón hamburger (mobile) |
+| `chevron-right` | Breadcrumb separator |
+| `chevron-down` | Dropdown indicator |
+| `search` | Search input (decorativo por ahora) |
+| `log-out` | Dropdown user: Cerrar sesión |
+| `sliders-horizontal` | Header de sección: Filtros |
+| `download` | Botón: Importar histórico |
+| `line-chart` | Botón: Generar predicción / Header de gráfica |
+| `activity` | Botón: Analizar patrones / Header de patrones |
+| `alert-triangle` | Header de sección: Alertas / Stat card icon |
+| `calendar` | Header de sección: Eventos / Stat card icon |
+| `check-square` | Header de sección: Estrategia / Stat card icon |
+| `building-plus` | Empty state icon |
+| `inbox` | Empty state icon (Cuentas) |
+| `mail` | Input icon: email |
+| `lock` | Input icon: password |
+| `log-in` | Login header icon |
+| `alert-circle` | Login error icon |
+| `arrow-right` | Login submit button |
+| `loader-2` | Loading spinner (animate-spin) |
+| `external-link` | Botón: Conectar cuenta de Google |
+| `shield-check` | Conectar paso 1 icon |
+| `list-tree` | Conectar paso 2 icon |
+| `save` | Botón: Guardar |
+| `pencil` | Botón: Editar |
+| `trash-2` | Botón: Eliminar |
+| `refresh-cw` | Botón: Reactivar |
+| `plus` | Botón: Agregar / Nuevo |
+| `check` | Step indicator: paso completado |
+
+Para buscar más iconos: <https://lucide.dev/icons>.
+
+---
+
+## 9. Page template
+
+El template canónico para nuevas páginas está documentado en
+[`docs/page-template.md`](page-template.md). Resumen rápido:
+
+```html
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TÍTULO · Predictor de Tráfico E3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>[x-cloak] { display: none !important; }</style>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <div id="app-shell">
+      <div class="hidden md:block md:w-64 md:border-r md:border-gray-200 md:bg-white md:h-screen"></div>
+    </div>
+    <main class="px-4 md:px-6 py-6 max-w-7xl w-full" x-data="pageComponent()" x-init="init(); $nextTick(() => lucide.createIcons())">
+      <header class="mb-6">
+        <h1 class="flex items-center gap-2 text-2xl font-semibold text-gray-900">
+          <i data-lucide="nombre-icono" class="w-7 h-7 text-blue-600"></i>
+          Título de la página
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">Subtítulo opcional.</p>
+      </header>
+      <!-- contenido aquí -->
+    </main>
+    <script src="/js/api.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="/js/page.js"></script>
+    <script src="/js/shell.js"></script>
+  </body>
+</html>
+```
+
+---
+
+## 10. Reglas de copy (es-MX)
 
 - **Tuteo directo.** "Conectar", "Generar", "Importar" (no
   "Conectarse", "Genera tu predicción").

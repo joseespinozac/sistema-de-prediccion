@@ -7,19 +7,35 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="/js/api.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="/js/sidebar.js"></script>
     <style>
       [x-cloak] { display: none !important; }
     </style>
   </head>
   <body class="min-h-screen bg-gray-100 text-gray-900">
-    <header class="bg-white border-b border-gray-200">
-      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <a href="/index.html" class="text-sm font-semibold">Predictor de Tráfico E3</a>
-        <a href="/index.html" class="text-sm text-blue-600 hover:underline">← Dashboard</a>
-      </div>
-    </header>
+    <div class="flex min-h-screen" x-data="sidebar()" x-init="items = window.NAV_ITEMS">
+      <!-- Sidebar (desktop) -->
+      <aside class="hidden md:flex md:flex-col md:w-56 md:shrink-0 md:border-r md:border-gray-200 md:bg-white">
+        <div class="p-4 border-b border-gray-200">
+          <a href="/index.html" class="text-sm font-semibold">Predictor de Tráfico E3</a>
+        </div>
+        <nav class="flex-1 p-3 space-y-1">
+          <template x-for="item in items" :key="item.id">
+            <a
+              :href="item.href"
+              :class="active(item)
+                ? 'block rounded-md px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700'
+                : 'block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'"
+              x-text="item.label"
+            ></a>
+          </template>
+        </nav>
+      </aside>
 
-    <main class="max-w-3xl mx-auto px-4 py-8" x-data="connectPage()" x-init="init()">
+      <!-- Main content -->
+      <div class="flex-1 min-w-0 flex flex-col">
+        <main class="flex-1 px-4 py-8 max-w-3xl w-full" x-data="connectPage()" x-init="init()">
       <h1 class="text-xl font-semibold mb-1">Conectar cuenta de Google</h1>
       <p class="text-sm text-gray-500 mb-6">
         Conecta GA4 y Search Console para importar el histórico de tráfico.
@@ -200,5 +216,7 @@
         };
       }
     </script>
+      </div>
+    </div>
   </body>
 </html>

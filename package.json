@@ -17,7 +17,8 @@
     "seed": "sequelize-cli db:seed:all",
     "seed:undo": "sequelize-cli db:seed:undo:all",
     "build:css": "tailwindcss -i ./frontend/css/input.css -o ./frontend/css/app.css",
-    "watch:css": "tailwindcss -i ./frontend/css/input.css -o ./frontend/css/app.css --watch"
+    "watch:css": "tailwindcss -i ./frontend/css/input.css -o ./frontend/css/app.css --watch",
+    "docs:check": "node scripts/check-docs.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^10.0.1",

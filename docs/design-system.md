@@ -265,7 +265,108 @@ Configuración obligatoria:
 
 ---
 
-## 7. Reglas de copy (es-MX)
+## 7. Sidebar / navegación
+
+Sidebar vertical fijo a la izquierda en `md+`. En mobile colapsa a
+un drawer overlay con hamburger toggle en el header.
+
+### Estructura del layout
+
+```
+desktop (≥md):
+┌──────────┬────────────────────────────────────────┐
+│ SIDEBAR  │ Header (hamburger mobile + user/logout)│
+│ (w-56)   ├────────────────────────────────────────┤
+│  brand   │                                        │
+│  nav     │ Main content                          │
+│          │                                        │
+└──────────┴────────────────────────────────────────┘
+
+mobile (<md):
+┌────────────────────────────────────────┐
+│ ☰  Header                          user  │
+├────────────────────────────────────────┤
+│  Main content                          │
+└────────────────────────────────────────┘
+[☰ → drawer desliza desde la izquierda + backdrop]
+```
+
+### Tokens
+
+| Elemento | Desktop | Mobile |
+|---|---|---|
+| Ancho sidebar | `w-56` (224px) | `w-64` (256px) cuando drawer abierto |
+| Borde derecho | `border-r border-gray-200` | n/a |
+| Fondo | `bg-white` | `bg-white` (drawer) / `bg-black/50` (backdrop) |
+| Padding interno | `p-3` para nav, `p-4` para brand top | igual |
+
+### Item activo vs inactivo
+
+| Estado | Clases |
+|---|---|
+| Inactivo | `block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50` |
+| Activo | `block rounded-md px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700` |
+
+Ambos usan el mismo `px-3 py-2` para que el cambio de estado no
+mueva el layout.
+
+### Single source of truth: `NAV_ITEMS`
+
+`frontend/js/navigation.js` exporta `window.NAV_ITEMS` — un array
+de items. Una línea por feature nueva:
+
+```js
+window.NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard',       href: '/index.html' },
+  { id: 'connect',   label: 'Conectar Google', href: '/connect.html' },
+  { id: 'patterns',  label: 'Patrones',        href: '/index.html#patterns' },
+  // futuras features se agregan aquí cuando se implementen
+];
+```
+
+**Reglas para items:**
+
+| Caso | Forma |
+|---|---|
+| Página nueva | `{ id, label, href: '/ruta.html' }` |
+| Anchor en página existente | `{ ..., href: '/index.html#seccion' }` (la sección debe tener `id="seccion"` y `scroll-mt-N`) |
+| Item deshabilitado (feature planeada, no implementada) | `{ ..., disabled: true }` (atenuado, no clickeable) |
+
+### Active state logic
+
+```js
+function active(item) {
+  return location.pathname + location.hash === item.href;
+}
+```
+
+- `/index.html` sin hash → matchea item con `href: '/index.html'`.
+- `/index.html#patterns` → matchea item con `href: '/index.html#patterns'`.
+- `/login.html` → no matchea ningún item, todos inactivos.
+
+### Drawer mobile (z-index y animación)
+
+| Capa | z-index | Animación |
+|---|---|---|
+| Backdrop | `z-40` | sin animación (aparece/desaparece) |
+| Drawer | `z-50` | `x-transition` slide-in 200ms / slide-out 150ms |
+
+El click en el backdrop cierra el drawer (`@click="close()"`).
+El click en cualquier item del drawer también cierra
+(`@click="close()"`) antes de navegar.
+
+### Páginas donde aparece
+
+| Página | Sidebar | Por qué |
+|---|---|---|
+| `login.html` | ❌ no | Pre-autenticación, no hay a dónde navegar |
+| `index.html` | ✅ sí | Dashboard principal |
+| `connect.html` | ✅ sí | Setup de cuenta, accesible post-login |
+| Páginas futuras | ✅ sí | Por defecto en todas las autenticadas |
+
+---
+
+## 8. Reglas de copy (es-MX)
 
 - **Tuteo directo.** "Conectar", "Generar", "Importar" (no
   "Conectarse", "Genera tu predicción").

@@ -39,7 +39,7 @@
 
 | Date | Version | Feature | Description | Commit | Notes |
 |---|---|---|---|---|---|
-| 2026-08-04 | v0.1.0 | `ddd-adoption` | Adoptar Documentation-Driven Development: `docs/{governance,design-document,design-system,roadmap,progress}.md` + `features/` + `rfcs/` + `decisions/` + `implementation/` + `scripts/check-docs.mjs` + `AGENTS.md` raíz. 6 ADRs fundacionales (000–005). 2 branches (`development` + `production`), semver, hotfix con back-merge. | (pending) | Ver [`ADR-000`](decisions/ADR-000-ddd-adoption.md). |
+| 2026-08-04 | v0.1.0 | `ddd-adoption` | Adoptar Documentation-Driven Development: `docs/{governance,design-document,design-system,roadmap,progress}.md` + `features/` + `rfcs/` + `decisions/` + `implementation/` + `scripts/check-docs.mjs` + `AGENTS.md` raíz. 6 ADRs fundacionales (000–005). 2 branches (`development` + `production`), semver, hotfix con back-merge. | tag `v0.1.0` (hash en Notes tras cierre de wave) | Ver [`ADR-000`](decisions/ADR-000-ddd-adoption.md), [`ADR-005`](decisions/ADR-005-environment-branching-strategy.md). |
 
 ### v0.0.0 — Fases 1–4 del plan original (pre-DDD)
 

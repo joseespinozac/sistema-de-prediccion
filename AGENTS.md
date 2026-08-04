@@ -284,10 +284,15 @@ Reference the wave or feature spec slug when relevant
   liberado." en el log, el reload funcionó limpio.
 - **Servicio Python sin venv.** `npm run dev:python` delega en
   `scripts/run-python.js` que usa el Python del venv
-  (`prediction-service/.venv/Scripts/python.exe` o `bin/python`).
+  (`prediction-service/.venv/Scripts/python.exe` o `bin/python`)
+  y carga las vars del `.env` raíz (incluido `INTERNAL_TOKEN`)
+  para que Python valide el `X-Internal-Token` correctamente.
   Si ves "FATAL: venv no encontrado", corre `cd
   prediction-service && python -m venv .venv && pip install -r
-  requirements.txt`.
+  requirements.txt`. Si Python responde con `503 INTERNAL_TOKEN
+  no configurado`, es porque el .env raíz no tiene
+  `INTERNAL_TOKEN` o porque corriste uvicorn directo sin pasar
+  por `scripts/run-python.js`.
 
 ## Periodic jobs
 

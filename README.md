@@ -55,7 +55,10 @@ Prophet viene comentado por defecto; el servicio usa un motor de respaldo que
 no requiere compilación. Para habilitar Prophet: `pip install prophet`.
 
 > **Atajo:** `npm run dev` levanta backend Node + servicio Python juntos con
-> `concurrently` (requiere el `.venv` ya creado y el token exportado).
+> `concurrently` (requiere el `.venv` ya creado). El script
+> `scripts/run-python.js` carga las variables del `.env` raíz (incluido
+> `INTERNAL_TOKEN`) y las propaga al child de Python, así que no hace
+> falta exportar el token a mano.
 
 Abre <http://localhost:3001/login.html> e ingresa con el usuario demo:
 

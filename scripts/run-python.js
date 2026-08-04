@@ -3,7 +3,13 @@
 // (prediction-service/.venv/) en lugar del Python del sistema. Sin esto,
 // npm invoca `python -m uvicorn` con el Python global que no tiene uvicorn.
 //
+// Ademas, importa dotenv/config para cargar las variables del .env raiz
+// (INTERNAL_TOKEN, etc.) en process.env antes del spawn, de modo que el
+// child process de Python las herede y el servicio pueda validar el header
+// X-Internal-Token. Variables ya seteadas en el entorno NO se sobreescriben.
+//
 // Falla con mensaje claro si el venv no existe.
+import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
@@ -34,5 +40,8 @@ const args = [
   '--reload',
 ];
 
-const child = spawn(venvBin, args, { stdio: 'inherit' });
+// env explicito = el child hereda process.env (incluye las vars que dotenv
+// cargo desde .env). Sin esto, el child recibe solo el env del parent
+// shell sin las vars del archivo.
+const child = spawn(venvBin, args, { stdio: 'inherit', env: process.env });
 child.on('exit', (code) => process.exit(code ?? 1));

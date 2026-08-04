@@ -35,6 +35,12 @@
 
 ## Shipped
 
+### v0.1.1 — Periodic jobs migration (ADR-004)
+
+| Date | Version | Feature | Description | Commit | Notes |
+|---|---|---|---|---|---|
+| 2026-08-04 | v0.1.1 | `periodic-jobs-adr004` | Migrar `backend/jobs/cron.js` al patrón ADR-004: split en `scheduler.js` (solo registra) + `report-snapshot.js` (`runReportSnapshot()` puro, devuelve `{jobName,startedAt,finishedAt,durationMs,stats}`). Nuevo `scripts/run-jobs.js` con CLI runner: `npm run jobs:run -- --list` y `npm run jobs:run report-snapshot`. AGENTS.md §Periodic jobs actualizada. | `992f5b4`+`824ddb5`+`537c1ff` | 3 commits en development. Verificado end-to-end: `npm run jobs:run report-snapshot` crea snapshot #2 en BD, 4 cuentas evaluadas, 1.8s. Refs: [`ADR-004`](decisions/ADR-004-periodic-jobs-governance.md). |
+
 ### v0.1.0 — DDD adoption (esta wave)
 
 | Date | Version | Feature | Description | Commit | Notes |

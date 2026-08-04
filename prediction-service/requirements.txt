@@ -1,0 +1,9 @@
+# Servicio de predicción — dependencias Python (3.11+ recomendado).
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.30,<0.31
+pandas>=2.2,<3.0
+
+# Prophet es OPCIONAL en la práctica: si no se instala (o falla la compilación
+# de cmdstanpy/Stan en Windows), el servicio usa un fallback numpy/pandas y
+# sigue funcionando. Descomenta la línea para habilitar el motor Prophet:
+# prophet>=1.1.5,<2.0

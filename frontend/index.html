@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard · Predictor de Tráfico E3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <style>
+      [x-cloak] { display: none !important; }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gray-100 text-gray-900" x-data="dashboard()" x-init="init()">
+    <header class="bg-white border-b border-gray-200">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <span class="text-sm font-semibold">Predictor de Tráfico E3</span>
+        <div class="flex items-center gap-4 text-sm">
+          <a href="/connect.html" class="text-blue-600 hover:underline">Conectar Google</a>
+          <span class="text-gray-400" x-text="user ? user.email : ''"></span>
+          <button @click="logout()" class="text-gray-600 hover:text-gray-900">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6">
+      <div
+        x-show="error"
+        x-cloak
+        class="mb-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-md px-4 py-2"
+        x-text="error"
+      ></div>
+
+      <div
+        x-show="!loadingAccounts && accounts.length === 0"
+        x-cloak
+        class="bg-white border border-gray-200 rounded-xl p-8 text-center"
+      >
+        <p class="text-gray-600 mb-3">Todavía no hay cuentas trackeadas.</p>
+        <a href="/connect.html" class="inline-block bg-blue-600 text-white text-sm rounded-md px-4 py-2">
+          Conectar una cuenta de Google
+        </a>
+      </div>
+
+      <!-- Controles -->
+      <section
+        x-show="accounts.length > 0"
+        x-cloak
+        class="bg-white border border-gray-200 rounded-xl p-4 mb-6"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-gray-500 mb-1">Cuenta</label>
+            <select x-model="accountId" @change="onAccountChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <template x-for="a in accounts" :key="a.id">
+                <option :value="a.id" x-text="a.nombre"></option>
+              </template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Métrica</label>
+            <select x-model="metric" @change="onFilterChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="clics">Clics (GSC)</option>
+              <option value="impresiones">Impresiones (GSC)</option>
+              <option value="sesiones">Sesiones (GA4)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+            <input type="date" x-model="start" @change="onFilterChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+            <input type="date" x-model="end" @change="onFilterChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div x-show="isGa4()">
+            <label class="block text-xs font-medium text-gray-500 mb-1">URL (opcional)</label>
+            <select x-model="urlId" @change="onFilterChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="">Todas las URLs</option>
+              <template x-for="u in urls" :key="u.id">
+                <option :value="u.id" x-text="u.url"></option>
+              </template>
+            </select>
+          </div>
+          <div x-show="!isGa4()">
+            <label class="block text-xs font-medium text-gray-500 mb-1">Consulta (opcional)</label>
+            <select x-model="queryId" @change="onFilterChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="">Todas las consultas</option>
+              <template x-for="q in queries" :key="q.id">
+                <option :value="q.id" x-text="q.query"></option>
+              </template>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button
+              @click="importHistoryManual()"
+              :disabled="importingHistory"
+              title="Trae/actualiza el histórico de GA4 y Search Console para el rango de fechas seleccionado"
+              class="bg-gray-700 hover:bg-gray-800 disabled:opacity-60 text-white text-sm font-medium rounded-md px-3 py-2 w-full md:w-auto"
+            >
+              <span x-show="!importingHistory">Importar histórico</span>
+              <span x-show="importingHistory" x-cloak>Importando…</span>
+            </button>
+            <button
+              @click="runPrediction()"
+              :disabled="predicting"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-md px-4 py-2 w-full md:w-auto"
+            >
+              <span x-show="!predicting">Generar predicción</span>
+              <span x-show="predicting" x-cloak>Calculando…</span>
+            </button>
+            <button
+              @click="analyzePatterns()"
+              :disabled="analyzingPatterns"
+              title="Detecta caídas, picos y recuperaciones en el rango seleccionado y los explica en texto"
+              class="bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-sm font-medium rounded-md px-4 py-2 w-full md:w-auto"
+            >
+              <span x-show="!analyzingPatterns">Analizar patrones</span>
+              <span x-show="analyzingPatterns" x-cloak>Analizando…</span>
+            </button>
+          </div>
+        </div>
+
+        <p x-show="importMsg" x-cloak class="mt-3 text-sm text-gray-600" x-text="importMsg"></p>
+        <p x-show="predictionMsg" x-cloak class="mt-1 text-sm text-gray-600" x-text="predictionMsg"></p>
+      </section>
+
+      <!-- Gráfica -->
+      <section x-show="accounts.length > 0" x-cloak class="bg-white border border-gray-200 rounded-xl p-4 relative mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-medium text-gray-700">
+            Histórico + predicción — <span x-text="metricLabel()"></span>
+          </h2>
+          <span class="text-xs text-gray-400" x-text="seriesCount + ' días'"></span>
+        </div>
+        <div x-show="loadingChart" x-cloak class="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-xl">
+          <span class="text-sm text-gray-500">Cargando datos…</span>
+        </div>
+        <div id="chart" class="min-h-[380px]"></div>
+      </section>
+
+      <!-- Resumen de patrones (v1, reglas — ver ROADMAP.md) -->
+      <section x-show="patternsResumen" x-cloak class="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+        <h2 class="text-sm font-medium text-gray-700 mb-2">Resumen de patrones (semanal)</h2>
+        <p class="text-sm text-gray-700 leading-relaxed" x-text="patternsResumen"></p>
+
+        <div x-show="patternsEpisodios.length > 0" x-cloak class="mt-4 space-y-2">
+          <template x-for="(ep, idx) in patternsEpisodios" :key="idx">
+            <div class="flex items-center gap-3 text-sm border-b border-gray-100 pb-2">
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium border"
+                :class="ep.tipo === 'caida' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
+                x-text="episodeTypeLabel(ep)"
+              ></span>
+              <span class="text-gray-500 font-mono text-xs" x-text="ep.desde + ' → ' + ep.hasta"></span>
+              <span class="text-gray-700" x-text="(ep.tipo === 'caida' ? '-' : '+') + Math.abs(ep.magnitud_pct) + '%'"></span>
+              <span x-show="ep.recuperado" class="text-emerald-600 text-xs">✓ recuperado</span>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- Grid inferior: alertas + estrategia + eventos -->
+      <div x-show="accounts.length > 0" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Alertas -->
+        <section class="bg-white border border-gray-200 rounded-xl p-4">
+          <h2 class="text-sm font-medium text-gray-700 mb-3">Alertas activas</h2>
+          <p x-show="!loadingAlerts && alerts.length === 0" x-cloak class="text-sm text-gray-400">
+            Sin alertas activas.
+          </p>
+          <div class="space-y-3">
+            <template x-for="al in alerts" :key="al.id">
+              <div class="border rounded-lg p-3" :class="severityColor(al.severidad)">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold">
+                    <span x-text="al.tipo === 'caida' ? '▼ Caída' : '▲ Pico'"></span>
+                    ·
+                    <span x-text="'severidad ' + al.severidad"></span>
+                    <span x-show="al.cambio_proyectado != null" x-text="' (' + Math.round(al.cambio_proyectado * 100) + '%)'"></span>
+                  </span>
+                  <button @click="resolveAlert(al.id)" class="text-xs underline">Resolver</button>
+                </div>
+                <p class="text-sm mt-1" x-text="al.sugerencia"></p>
+                <button @click="logForAlert(al)" class="mt-2 text-xs underline">Registrar acción</button>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <!-- Eventos externos -->
+        <section class="bg-white border border-gray-200 rounded-xl p-4">
+          <h2 class="text-sm font-medium text-gray-700 mb-3">Eventos externos</h2>
+          <div class="flex flex-wrap gap-2 items-end mb-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Fecha</label>
+              <input type="date" x-model="evFecha" class="border border-gray-300 rounded-md px-2 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Tipo</label>
+              <select x-model="evTipo" class="border border-gray-300 rounded-md px-2 py-1.5 text-sm">
+                <option value="update_google">Update de Google</option>
+                <option value="mercado">Mercado</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[140px]">
+              <label class="block text-xs text-gray-500 mb-1">Descripción</label>
+              <input x-model="evDescripcion" placeholder="Ej. Core Update" class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm" />
+            </div>
+            <button @click="saveEvent()" :disabled="savingEvent" class="bg-gray-800 hover:bg-black disabled:opacity-60 text-white text-sm rounded-md px-3 py-1.5">
+              Registrar
+            </button>
+          </div>
+          <div class="space-y-2 max-h-56 overflow-y-auto">
+            <template x-for="ev in events" :key="ev.id">
+              <div class="flex items-center justify-between text-sm border-b border-gray-100 pb-1">
+                <span>
+                  <span class="font-mono text-xs text-gray-500" x-text="ev.fecha"></span>
+                  <span class="ml-2" x-text="ev.descripcion"></span>
+                  <span class="ml-1 text-xs text-gray-400" x-text="'(' + ev.tipo + ')'"></span>
+                </span>
+                <button @click="deleteEvent(ev.id)" class="text-xs text-red-600 hover:underline">Borrar</button>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <!-- Registro de estrategia -->
+        <section class="bg-white border border-gray-200 rounded-xl p-4 lg:col-span-2">
+          <h2 class="text-sm font-medium text-gray-700 mb-3">Registro de estrategia (trazabilidad)</h2>
+          <div class="flex flex-col md:flex-row gap-2 mb-4">
+            <input x-model="nuevaAccion" placeholder="Acción tomada…" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm" />
+            <input x-model="nuevoResultado" placeholder="Resultado observado (opcional)" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm" />
+            <button @click="saveStrategy()" :disabled="savingStrategy" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm rounded-md px-4 py-2">
+              Guardar
+            </button>
+          </div>
+          <p x-show="strategyEntries.length === 0" x-cloak class="text-sm text-gray-400">Sin registros aún.</p>
+          <table x-show="strategyEntries.length > 0" x-cloak class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b border-gray-200">
+                <th class="py-1 pr-2">Fecha</th>
+                <th class="py-1 pr-2">Acción</th>
+                <th class="py-1 pr-2">Resultado</th>
+                <th class="py-1 pr-2">Alerta</th>
+                <th class="py-1">Autor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="e in strategyEntries" :key="e.id">
+                <tr class="border-b border-gray-100">
+                  <td class="py-1 pr-2 font-mono text-xs text-gray-500" x-text="new Date(e.fecha).toLocaleDateString('es-MX')"></td>
+                  <td class="py-1 pr-2" x-text="e.accion_tomada"></td>
+                  <td class="py-1 pr-2 text-gray-600" x-text="e.resultado_observado || '—'"></td>
+                  <td class="py-1 pr-2 text-xs" x-text="e.Alert ? (e.Alert.tipo + '/' + e.Alert.severidad) : '—'"></td>
+                  <td class="py-1 text-xs text-gray-500" x-text="e.autor ? e.autor.email : ''"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

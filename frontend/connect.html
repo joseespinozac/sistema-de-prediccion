@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Conectar Google · Predictor de Tráfico E3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="/js/api.js"></script>
+    <style>
+      [x-cloak] { display: none !important; }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gray-100 text-gray-900">
+    <header class="bg-white border-b border-gray-200">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="/index.html" class="text-sm font-semibold">Predictor de Tráfico E3</a>
+        <a href="/index.html" class="text-sm text-blue-600 hover:underline">← Dashboard</a>
+      </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-8" x-data="connectPage()" x-init="init()">
+      <h1 class="text-xl font-semibold mb-1">Conectar cuenta de Google</h1>
+      <p class="text-sm text-gray-500 mb-6">
+        Conecta GA4 y Search Console para importar el histórico de tráfico.
+      </p>
+
+      <!-- Aviso si OAuth aún no está configurado en el servidor -->
+      <div
+        x-show="!configured"
+        x-cloak
+        class="mb-6 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-4 py-3"
+      >
+        El OAuth de Google todavía no está configurado en el servidor
+        (faltan <span class="font-mono">GOOGLE_CLIENT_ID</span> /
+        <span class="font-mono">GOOGLE_CLIENT_SECRET</span>). Consulta el README
+        para generarlos en Google Cloud Console.
+      </div>
+
+      <!-- Mensajes de error/OK del callback -->
+      <div
+        x-show="flash"
+        x-cloak
+        class="mb-6 text-sm rounded-md px-4 py-3 border"
+        :class="flashOk ? 'text-green-800 bg-green-50 border-green-200' : 'text-red-800 bg-red-50 border-red-200'"
+        x-text="flash"
+      ></div>
+
+      <!-- Paso 1: iniciar conexión -->
+      <section class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <h2 class="font-medium mb-2">1. Autorizar con Google</h2>
+        <p class="text-sm text-gray-500 mb-4">
+          Se abrirá la pantalla de consentimiento de Google (solo lectura de
+          Analytics y Search Console).
+        </p>
+        <a
+          href="/api/auth/google/connect"
+          :class="configured ? '' : 'pointer-events-none opacity-50'"
+          class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md px-4 py-2"
+        >
+          Conectar cuenta de Google
+        </a>
+      </section>
+
+      <!-- Paso 2: elegir propiedad/sitio (aparece tras el callback) -->
+      <section
+        x-show="connectionId"
+        x-cloak
+        class="bg-white rounded-xl border border-gray-200 p-5"
+      >
+        <h2 class="font-medium mb-2">2. Elegir propiedad y sitio</h2>
+
+        <div x-show="loadingProps" class="text-sm text-gray-500 py-4">
+          Cargando propiedades disponibles…
+        </div>
+
+        <div x-show="!loadingProps" x-cloak class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Propiedad GA4</label>
+            <select x-model="ga4PropertyId" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="">— Ninguna —</option>
+              <template x-for="p in ga4Properties" :key="p.property_id">
+                <option :value="p.property_id" x-text="`${p.display_name} (${p.property_id})`"></option>
+              </template>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Sitio de Search Console</label>
+            <select x-model="gscSiteUrl" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="">— Ninguno —</option>
+              <template x-for="s in gscSites" :key="s.site_url">
+                <option :value="s.site_url" x-text="s.site_url"></option>
+              </template>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Nombre de la cuenta</label>
+            <input x-model="nombre" placeholder="Ej. Cliente / Marca" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+          </div>
+
+          <div x-show="linkError" x-cloak class="text-sm text-red-700" x-text="linkError"></div>
+
+          <button
+            @click="link()"
+            :disabled="linking"
+            class="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-md px-4 py-2"
+          >
+            <span x-show="!linking">Guardar y asociar</span>
+            <span x-show="linking" x-cloak>Guardando…</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      function connectPage() {
+        return {
+          configured: true,
+          connectionId: null,
+          flash: '',
+          flashOk: false,
+          loadingProps: false,
+          ga4Properties: [],
+          gscSites: [],
+          ga4PropertyId: '',
+          gscSiteUrl: '',
+          nombre: '',
+          linking: false,
+          linkError: '',
+
+          async init() {
+            // Requiere sesión.
+            try {
+              await API.get('/api/auth/me');
+            } catch {
+              return; // api.js ya redirige a login en 401
+            }
+
+            // Estado de configuración de OAuth.
+            try {
+              const s = await API.get('/api/auth/google/status');
+              this.configured = s.configured;
+            } catch {}
+
+            // Leer parámetros del callback.
+            const params = new URLSearchParams(location.search);
+            if (params.get('error')) {
+              this.flash = 'Error al conectar: ' + params.get('error');
+              this.flashOk = false;
+            }
+            const conn = params.get('connection');
+            if (conn) {
+              this.connectionId = conn;
+              this.flash = 'Cuenta de Google conectada. Elige propiedad y sitio.';
+              this.flashOk = true;
+              this.loadProperties();
+            }
+          },
+
+          async loadProperties() {
+            this.loadingProps = true;
+            try {
+              const data = await API.get(
+                '/api/google/properties?connection=' + this.connectionId
+              );
+              this.ga4Properties = data.ga4Properties || [];
+              this.gscSites = data.gscSites || [];
+            } catch (e) {
+              this.linkError = e.message;
+            } finally {
+              this.loadingProps = false;
+            }
+          },
+
+          async link() {
+            this.linkError = '';
+            if (!this.ga4PropertyId && !this.gscSiteUrl) {
+              this.linkError = 'Selecciona al menos una propiedad GA4 o un sitio GSC.';
+              return;
+            }
+            this.linking = true;
+            try {
+              const res = await API.post(
+                `/api/google/connections/${this.connectionId}/link`,
+                {
+                  nombre: this.nombre,
+                  ga4_property_id: this.ga4PropertyId,
+                  gsc_site_url: this.gscSiteUrl,
+                }
+              );
+              location.href = '/index.html?account=' + res.account.id;
+            } catch (e) {
+              this.linkError = e.message;
+            } finally {
+              this.linking = false;
+            }
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

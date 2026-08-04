@@ -1,0 +1,45 @@
+{
+  "name": "predictor-trafico-e3",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Herramienta interna de SEO para predecir tráfico web (GA4 + Search Console + Prophet).",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev:node": "node --watch backend/server.js",
+    "dev:python": "python -m uvicorn main:app --app-dir prediction-service --host 127.0.0.1 --port 8000 --reload",
+    "dev": "concurrently -n node,python -c blue,green \"npm:dev:node\" \"npm:dev:python\"",
+    "migrate": "sequelize-cli db:migrate",
+    "migrate:undo": "sequelize-cli db:migrate:undo",
+    "seed": "sequelize-cli db:seed:all",
+    "seed:undo": "sequelize-cli db:seed:undo:all",
+    "build:css": "tailwindcss -i ./frontend/css/input.css -o ./frontend/css/app.css",
+    "watch:css": "tailwindcss -i ./frontend/css/input.css -o ./frontend/css/app.css --watch"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^10.0.1",
+    "@fastify/rate-limit": "^10.1.1",
+    "@fastify/secure-session": "^8.1.0",
+    "@fastify/static": "^8.0.1",
+    "@google-analytics/data": "^4.12.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "googleapis": "^144.0.0",
+    "node-cron": "^3.0.3",
+    "sequelize": "^6.37.3",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "pino-pretty": "^11.2.2",
+    "sequelize-cli": "^6.6.2",
+    "tailwindcss": "^3.4.13"
+  },
+  "allowScripts": {
+    "sqlite3@5.1.7": true
+  }
+}

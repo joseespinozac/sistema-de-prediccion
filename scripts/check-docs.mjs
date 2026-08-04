@@ -40,7 +40,15 @@ const FEATURE_REQUIRED_SECTIONS = [
   '## 13. Impacto sobre otras funcionalidades',
 ];
 
-const ALLOWED_STATUSES = ['draft', 'in_progress', 'completed', 'rejected'];
+const ALLOWED_STATUSES = [
+  'draft',
+  'pending',
+  'in_progress',
+  'completed',
+  'accepted',
+  'rejected',
+  'deferred',
+];
 const ALLOWED_SCOPES = ['backend', 'frontend', 'prediction-service', 'docs', 'deps', 'infra'];
 const LEGACY_SPRINT_MARKERS = [
   /\bFase\s+\d/iu,

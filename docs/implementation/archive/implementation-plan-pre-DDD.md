@@ -1,3 +1,11 @@
+# ARCHIVED — superseded by `../../design-document.md`
+
+> Este archivo se conserva solo como referencia histórica del plan de implementación original antes de la adopción de Documentation-Driven Development ([`ADR-000`](../../decisions/ADR-000-ddd-adoption.md)). Su contenido fue reorganizado bajo las 10 secciones de [`../../design-document.md`](../../design-document.md) (ver [`ADR-002`](../../decisions/ADR-002-monolithic-design-doc.md)).
+>
+> NO edites este archivo. Para el estado actual del sistema, consulta [`../../design-document.md`](../../design-document.md).
+
+---
+
 # Implementation Plan — Predictor de Tráfico E3 (nombre provisional)
 
 > **Propósito de este documento:** fuente de verdad para el agente de código que va a construir esta aplicación. Cualquier decisión de arquitectura, alcance o prioridad debe salir de aquí. Si el agente encuentra una ambigüedad no cubierta en este doc, debe detenerse y preguntar antes de asumir.

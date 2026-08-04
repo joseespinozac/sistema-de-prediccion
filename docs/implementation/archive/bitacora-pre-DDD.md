@@ -1,3 +1,11 @@
+# ARCHIVED — superseded by `../../progress.md`
+
+> Este archivo se conserva solo como referencia histórica de la bitácora en prosa antes de la adopción de Documentation-Driven Development ([`ADR-000`](../../decisions/ADR-000-ddd-adoption.md)). Su contenido narrativo fue convertido a la tabla en [`../../progress.md`](../../progress.md).
+>
+> NO edites este archivo. Para historial shipped, edita [`../../progress.md`](../../progress.md).
+
+---
+
 # Bitácora de implementación — Predictor de Tráfico E3
 
 Registro histórico de qué se construyó, por qué, y cómo se verificó. Complementa

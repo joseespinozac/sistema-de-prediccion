@@ -22,6 +22,7 @@ import alertRoutes from './routes/alerts.js';
 import strategyLogRoutes from './routes/strategyLog.js';
 import externalEventRoutes from './routes/externalEvents.js';
 import reportRoutes from './routes/reports.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 import { startCronJobs } from './jobs/scheduler.js';
 
@@ -61,6 +62,7 @@ async function buildServer() {
   await fastify.register(strategyLogRoutes);
   await fastify.register(externalEventRoutes);
   await fastify.register(reportRoutes);
+  await fastify.register(dashboardRoutes);
 
   // Frontend estático (HTML + Tailwind + Alpine + ApexCharts).
   await fastify.register(fastifyStatic, {

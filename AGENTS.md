@@ -271,6 +271,23 @@ Reference the wave or feature spec slug when relevant
   partida, no decisiones cerradas. Se ajustan con uso real.
   Ver
   [`docs/design-document.md § Pendientes`](docs/design-document.md).
+- **Puerto default del backend es 3001, no 3000.** VMware NAT
+  Service (`vmnat`, PID típico ~6600) ocupa el puerto 3000 en
+  hosts con VMware instalado; no se puede matar sin elevación
+  admin. Si ves `EADDRINUSE: 0.0.0.0:3000`, confirma con
+  `netstat -ano | findstr :3000` que es `vmnat` y arranca con
+  el puerto alternativo. Override vía `PORT` en `.env`.
+- **Graceful shutdown.** `backend/server.js` registra handlers
+  `SIGINT`/`SIGTERM` que llaman `fastify.close()` antes de
+  `exit(0)`. Esto evita que `node --watch` deje el puerto
+  bindeado entre rotaciones. Si ves "Fastify cerrado. Puerto
+  liberado." en el log, el reload funcionó limpio.
+- **Servicio Python sin venv.** `npm run dev:python` delega en
+  `scripts/run-python.js` que usa el Python del venv
+  (`prediction-service/.venv/Scripts/python.exe` o `bin/python`).
+  Si ves "FATAL: venv no encontrado", corre `cd
+  prediction-service && python -m venv .venv && pip install -r
+  requirements.txt`.
 
 ## Periodic jobs
 

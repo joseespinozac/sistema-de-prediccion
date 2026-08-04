@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev:node": "node --watch backend/server.js",
-    "dev:python": "python -m uvicorn main:app --app-dir prediction-service --host 127.0.0.1 --port 8000 --reload",
+    "dev:python": "node scripts/run-python.js",
     "dev": "concurrently -n node,python -c blue,green \"npm:dev:node\" \"npm:dev:python\"",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",

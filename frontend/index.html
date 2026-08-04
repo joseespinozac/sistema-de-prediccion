@@ -6,6 +6,7 @@
     <title>Dashboard · Predictor de Tráfico E3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
+    <script defer src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
       [x-cloak] { display: none !important; }
@@ -14,10 +15,10 @@
   <body class="bg-gray-100 text-gray-900">
     <div id="app-shell">
       <!-- Skeleton: ocupa el espacio del sidebar mientras shell.js inyecta. -->
-      <div class="hidden md:block md:w-56 md:border-r md:border-gray-200 md:bg-white md:min-h-screen"></div>
+      <div class="hidden md:block md:w-64 md:border-r md:border-gray-200 md:bg-white md:h-screen"></div>
     </div>
 
-    <main class="px-4 py-6 max-w-6xl w-full" x-data="dashboard()" x-init="init()">
+    <main class="px-4 py-6 max-w-6xl w-full" x-data="dashboard()" x-init="init(); $nextTick(() => lucide.createIcons())">
       <div
         x-show="error"
         x-cloak

@@ -1,8 +1,11 @@
-// Shell reusable: sidebar (desktop + drawer mobile) + topbar.
+// Shell reusable: sidebar (w-64, desktop + drawer mobile) + topbar con
+// search + user + breadcrumb slot. Diseno inspirado en Flowbite Admin
+// Dashboard, replicado manualmente con utility classes de Tailwind.
+//
 // Se carga al FINAL del <body> (sincronico) para que el DOM este
 // parseado antes de inyectar. Cada pagina autenticada declara:
 //
-//   <body class="bg-gray-100 text-gray-900">
+//   <body class="bg-gray-50 text-gray-900">
 //     <div id="app-shell"><!-- skeleton aqui --></div>
 //     <main x-data="pageComponent()" x-init="init()">...</main>
 //   </body>
@@ -11,11 +14,11 @@
 //   1. Reemplaza #app-shell con el shell completo (incluye un slot
 //      <div data-app-content> donde va el contenido de la pagina).
 //   2. Mueve el <main> de la pagina dentro de ese slot.
-//   3. Expone window.appShell (Alpine component) antes de que Alpine
-//      arranque (Alpine usa defer; corre despues de DOMContentLoaded).
+//   3. Expone window.appShell (Alpine component).
+//   4. Escucha 'alpine:initialized' para reemplazar iconos Lucide
+//      (<i data-lucide="..."> con <svg>...</svg>).
 //
-// login.html NO usa el shell (pre-autenticacion) — no incluye
-// el placeholder #app-shell ni carga este script.
+// login.html NO usa el shell (pre-autenticacion).
 //
 // Orden de scripts (todos sincronicos al final del body):
 //   1. /js/api.js         window.API
@@ -25,16 +28,43 @@
 //   5. alpinejs (defer)   escanea DOM y arranca
 (function mountShell() {
   const SHELL_HTML = `
-    <div class="flex min-h-screen" x-data="appShell">
-      <!-- Backdrop mobile (cierra al click) -->
+    <div class="flex h-screen overflow-hidden bg-gray-50" x-data="appShell">
+
+      <!-- Sidebar desktop (fijo a la izquierda, w-64) -->
+      <aside class="hidden md:flex md:flex-col md:w-64 md:shrink-0 md:border-r md:border-gray-200 md:bg-white">
+        <a href="/index.html" class="flex items-center gap-2 h-16 px-5 border-b border-gray-200 shrink-0">
+          <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 text-white">
+            <i data-lucide="trending-up" class="w-5 h-5"></i>
+          </span>
+          <span class="text-sm font-semibold text-gray-900 leading-tight">
+            Predictor<br>de Tráfico E3
+          </span>
+        </a>
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          <template x-for="item in items" :key="item.id">
+            <a
+              :href="item.href"
+              :class="active(item)
+                ? 'flex items-center gap-3 rounded-r-md py-2 pl-4 pr-3 text-sm font-medium bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px'
+                : 'flex items-center gap-3 rounded-md py-2 px-3 text-sm text-gray-700 hover:bg-gray-100'"
+            >
+              <i :data-lucide="item.icon" class="w-5 h-5 shrink-0"></i>
+              <span x-text="item.label"></span>
+            </a>
+          </template>
+        </nav>
+        <div class="px-3 py-3 border-t border-gray-200 text-xs text-gray-400">
+          v0.3.0 — Flowbite style
+        </div>
+      </aside>
+
+      <!-- Backdrop + drawer mobile -->
       <div
         x-show="open"
         x-cloak
         @click="open = false"
-        class="md:hidden fixed inset-0 bg-black/50 z-40"
+        class="md:hidden fixed inset-0 bg-gray-900/50 z-40"
       ></div>
-
-      <!-- Drawer mobile (sliding sidebar) -->
       <aside
         x-show="open"
         x-cloak
@@ -46,58 +76,97 @@
         x-transition:leave-end="-translate-x-full"
         class="md:hidden fixed inset-y-0 left-0 w-64 bg-white z-50 flex flex-col"
       >
-        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-          <span class="text-sm font-semibold">Predictor de Tráfico E3</span>
-          <button @click="open = false" class="text-gray-500 hover:text-gray-900" aria-label="Cerrar menú">✕</button>
-        </div>
-        <nav class="flex-1 p-3 space-y-1">
+        <a href="/index.html" @click="open = false" class="flex items-center gap-2 h-16 px-5 border-b border-gray-200">
+          <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 text-white">
+            <i data-lucide="trending-up" class="w-5 h-5"></i>
+          </span>
+          <span class="text-sm font-semibold text-gray-900 leading-tight">
+            Predictor<br>de Tráfico E3
+          </span>
+        </a>
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           <template x-for="item in items" :key="item.id">
             <a
               :href="item.href"
               @click="open = false"
               :class="active(item)
-                ? 'block rounded-md px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700'
-                : 'block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'"
-              x-text="item.label"
-            ></a>
+                ? 'flex items-center gap-3 rounded-r-md py-2 pl-4 pr-3 text-sm font-medium bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px'
+                : 'flex items-center gap-3 rounded-md py-2 px-3 text-sm text-gray-700 hover:bg-gray-100'"
+            >
+              <i :data-lucide="item.icon" class="w-5 h-5 shrink-0"></i>
+              <span x-text="item.label"></span>
+            </a>
           </template>
         </nav>
-      </aside>
-
-      <!-- Sidebar desktop (siempre visible en md+) -->
-      <aside class="hidden md:flex md:flex-col md:w-56 md:shrink-0 md:border-r md:border-gray-200 md:bg-white">
-        <div class="p-4 border-b border-gray-200">
-          <a href="/index.html" class="text-sm font-semibold">Predictor de Tráfico E3</a>
+        <div class="px-3 py-3 border-t border-gray-200 text-xs text-gray-400">
+          v0.3.0 — Flowbite style
         </div>
-        <nav class="flex-1 p-3 space-y-1">
-          <template x-for="item in items" :key="item.id">
-            <a
-              :href="item.href"
-              :class="active(item)
-                ? 'block rounded-md px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700'
-                : 'block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'"
-              x-text="item.label"
-            ></a>
-          </template>
-        </nav>
       </aside>
 
-      <!-- Contenedor del header + contenido de la pagina -->
-      <div class="flex-1 min-w-0 flex flex-col">
-        <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center text-sm">
+      <!-- Columna derecha: topbar sticky + content slot scrollable -->
+      <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
+
+        <!-- Topbar sticky (no scrollea con el content) -->
+        <header class="h-16 bg-white border-b border-gray-200 px-4 md:px-6 flex items-center gap-4 shrink-0">
           <button
             @click="open = !open"
-            class="md:hidden mr-3 text-gray-700 hover:text-gray-900"
+            class="md:hidden text-gray-600 hover:text-gray-900"
             aria-label="Abrir menú"
           >
-            <span x-show="!open">☰</span>
-            <span x-show="open" x-cloak>✕</span>
+            <i data-lucide="menu" class="w-6 h-6"></i>
           </button>
+
+          <!-- Breadcrumb / titulo de pagina (placeholder, mejorado por paginas) -->
+          <div class="hidden md:flex items-center gap-2 text-sm">
+            <span class="text-gray-500">Predictor de Tráfico</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+            <span class="text-gray-900 font-medium" x-text="currentTitle()"></span>
+          </div>
+
           <div class="flex-1"></div>
-          <span class="text-gray-400 mr-4" x-text="user ? user.email : ''"></span>
-          <button @click="logout()" class="text-gray-600 hover:text-gray-900">Salir</button>
+
+          <!-- Search placeholder (decorativo por ahora) -->
+          <div class="hidden md:flex items-center gap-2 max-w-xs flex-1">
+            <div class="relative w-full">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+              <input
+                type="search"
+                placeholder="Buscar…"
+                class="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          <!-- User dropdown -->
+          <div class="relative" x-data="{ open: false }" @click.away="open = false">
+            <button @click="open = !open" class="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900">
+              <span class="hidden md:inline" x-text="user ? user.email : ''"></span>
+              <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold" x-text="userInitials()"></span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+            </button>
+            <div
+              x-show="open"
+              x-cloak
+              x-transition
+              class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50"
+            >
+              <div class="px-3 py-2 border-b border-gray-100">
+                <p class="text-xs text-gray-500">Sesión activa</p>
+                <p class="text-sm text-gray-900 truncate" x-text="user ? user.email : ''"></p>
+              </div>
+              <button
+                @click="logout()"
+                class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
         </header>
-        <div class="flex-1" data-app-content></div>
+
+        <!-- Content slot (unico elemento con scroll vertical) -->
+        <div class="flex-1 overflow-y-auto" data-app-content></div>
       </div>
     </div>
   `;
@@ -109,6 +178,15 @@
       items: window.NAV_ITEMS || [],
       active(item) {
         return location.pathname + location.hash === item.href;
+      },
+      currentTitle() {
+        const item = this.items.find((i) => i.href === location.pathname);
+        return item ? item.label : 'Dashboard';
+      },
+      userInitials() {
+        if (!this.user?.email) return '?';
+        const email = this.user.email;
+        return email.substring(0, 2).toUpperCase();
       },
       async init() {
         try {
@@ -131,7 +209,7 @@
   // Exponer appShell globalmente para que Alpine lo encuentre tras la inyeccion.
   window.appShell = appShell;
 
-  // Reemplazar iconos <i data-lucide="..."> con SVG tras Alpine init.
+  // Reemplazar iconos Lucide (<i data-lucide="..."> con <svg>) tras Alpine init.
   // Requiere que la pagina haya cargado lucide via CDN en <head>
   // (ver docs/page-template.md).
   document.addEventListener('alpine:initialized', () => {
@@ -157,4 +235,3 @@
     contentSlot.appendChild(pageMain);
   }
 })();
-

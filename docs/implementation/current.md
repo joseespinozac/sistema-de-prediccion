@@ -1,119 +1,34 @@
 # Implementation Plan — Current
 
-> **Status:** `active`
+> **Status:** `none`
 > **Updated:** 2026-08-04
 
-This file describes the implementation plan currently in execution.
-When no plan is active, set `Status: none` and reference
-[`docs/roadmap.md`](../roadmap.md) for the next candidate.
+No wave is currently active. The previous wave (DDD-adoption) shipped
+as `v0.1.0` on 2026-08-04 (merge commit `74c6fc8`); the plan is
+archived at
+[`archive/v0.1.0-shipped-2026-08-04.md`](archive/v0.1.0-shipped-2026-08-04.md).
 
-## Active waves
+## Next candidate
 
-- **Wave DDD-adoption** (started 2026-08-04):
-  - Adopt [`ADR-000`](../decisions/ADR-000-ddd-adoption.md).
-  - Promote 6 foundational ADRs (000–005).
-  - Migrate 3 root files to `docs/` (design-document, roadmap,
-    progress) + archive originals.
-  - Add `AGENTS.md` + `scripts/check-docs.mjs` + 15 feature specs.
-- **Owner:** docs + infra + backend.
-- **Target version:** v0.1.0.
+See [`docs/roadmap.md`](../roadmap.md) for the list of pending
+features. The next wave will be picked by the owner (not by the
+agent) based on business priorities and dependencies between
+features. Likely candidates:
 
-When this wave ships, the `current.md` files move to
-`archive/`, the wave closes, and `current.md` resets to
-`Status: none`. The next wave will be picked from
-[`docs/roadmap.md`](../roadmap.md) (likely R-002 / R-003 / R-005
-depending on business decisions).
+- **R-002** — registro de precisión del modelo (S, bloquea R-011).
+- **R-003** — publicar OAuth (S, bloqueada en decisión de negocio
+  sobre Workspace).
+- **R-005** — migración a Postgres + hosting (M, última gran pieza
+  pre-producción).
+- **R-004** — canal de entrega del reporte (M, depende de la
+  decisión de canal).
 
-## Atomic tasks
+To start a new wave:
 
-Tasks below cover the DDD-adoption wave. Each carries its commit
-hash as it lands.
-
-### Block A — Repo setup (branching from ADR-005)
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 1 | `chore(git):` `git init` + initial commit (estado pre-DDD) | ☑ done | infra | repo | 1 commit inicial con todo el código pre-DDD |
-| 2 | `chore(structure):` crear `docs/{features,rfcs,decisions,implementation/archive}` + `scripts/` | ☑ done | docs | tree | carpetas existen |
-| 3 | `chore(docs):` templates `features/_template.md` + `rfcs/_template.md` + `decisions/_template.md` | ☑ done | docs | 3 archivos | 13 secciones / 7 / 5 en orden |
-
-### Block B — Script verificador
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 4 | `feat(scripts):` `scripts/check-docs.mjs` (Node 20 ESM, sin deps) + `npm run docs:check` | ☑ done | backend | 1 archivo + `package.json` | 7 validaciones; sale con `!= 0` si hay errores |
-| 5 | `fix(scripts):` check-docs.mjs ignora `docs/implementation/archive/` | ☑ done | backend | 1 archivo | archive/ no genera dangling-link errors |
-
-### Block C — Governance & design system foundation
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 6 | `docs(governance):` crear `docs/governance.md` (10 secciones del flujo DDD) | ☑ done | docs | 1 archivo | umbral de 4 secciones mínimas, periodic jobs gov, layout |
-| 7 | `docs(design-system):` crear `docs/design-system.md` (tokens + componentes del stack actual) | ☑ done | docs | 1 archivo | 7 secciones; colores hardcoded de ApexCharts documentados |
-| 8 | `docs(agents):` crear `AGENTS.md` raíz (nav hub para code agents) | ☑ done | docs | 1 archivo | TL;DR + setup + commands + branching + source-of-truth + gotchas |
-
-### Block D — Foundational ADRs (6)
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 9 | `docs(adr):` ADR-000 — Adoptar Documentation-Driven Development | ☑ done | docs | 1 archivo | 5 secciones; referencia al gemelo |
-| 10 | `docs(adr):` ADR-001 — Extender `docs/` con governance + design-system | ☑ done | docs | 1 archivo | justifica la extensión del layout |
-| 11 | `docs(adr):` ADR-002 — Mantener `docs/design-document.md` como archivo único | ☑ done | docs | 1 archivo | umbral 1000 líneas; escape hatch |
-| 12 | `docs(adr):` ADR-003 — Implementation plan por release wave | ☑ done | docs | 1 archivo | criterios de inclusión en wave |
-| 13 | `docs(adr):` ADR-004 — Governance de periodic jobs | ☑ done | docs | 1 archivo | patrón `runJobName()` + idempotencia |
-| 14 | `docs(adr):` ADR-005 — Two-branch model (development + production) | ☑ done | docs + infra | 1 archivo + 2 branches | justifica 2 branches; semver; hotfix con back-merge |
-
-### Block E — Migrate root files to `docs/`
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 15 | `docs(design-doc):` migrar `implementation-plan.md` → `docs/design-document.md` (10 secciones) | ☑ done | docs | 2 archivos (mv+rewrite) | TOC arriba; secciones de ADR-002; sin markers Fase X |
-| 16 | `docs(roadmap):` migrar `ROADMAP.md` → `docs/roadmap.md` (tabla con R-NNN + enum status) | ☑ done | docs | 2 archivos | 16 filas (R-001..R-016); sin emojis |
-| 17 | `docs(progress):` migrar `BITACORA.md` → `docs/progress.md` (tabla histórica) | ☑ done | docs | 2 archivos | 6 entradas Fases 1-4 + nueva fila DDD adoption |
-| 18 | `chore(archive):` mover archivos originales a `docs/implementation/archive/` con `# ARCHIVED` header | ☑ done | docs | 3 archivos (git mv) | cada uno con header y link al nuevo canónico |
-
-### Block F — Feature specs (16 totales)
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 19 | `docs(features):` R-001 `detector-patrones-v1` (13 secciones completas, `status: completed`) | ☑ done | docs | 1 archivo | todas las secciones; link a `backend/services/patterns.js` |
-| 20 | `docs(features):` R-002 a R-016 (15 specs con status + 4 secciones mínimas) | ☑ done | docs | 15 archivos | summary + problem + objectives + DoD llenos; resto "Pendiente de detallar" cuando aplique |
-| 21 | `fix(scripts):` añadir `pending`, `accepted`, `deferred` a `ALLOWED_STATUSES` | ☑ done | backend | 1 archivo | specs con esos status pasan el check |
-
-### Block G — Implementation plan & branching
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 22 | `chore(git):` crear `production` branch desde el commit base de `development` | ☑ done | infra | repo | `git branch --list` muestra ambas; ambas en el mismo commit |
-| 23 | `docs(implementation):` `docs/implementation/current.md` con las tareas de esta wave | ⬜ | docs | 1 archivo | este archivo |
-
-### Block H — Wave closure
-
-| # | Task | State | Scope | Files | Acceptance criteria |
-|---|---|---|---|---|---|
-| 24 | `docs(progress):` cerrar la wave DDD-adoption → fila v0.1.0 con commit real | ⬜ | docs | 1 archivo | fecha + hash actual de `development` |
-| 25 | `chore(git):` merge a `production` + tag `v0.1.0` + back-merge a `development` | ⬜ | infra | repo | tag `v0.1.0` apunta al merge; ambas branches sincronizadas |
-| 26 | `chore(structure):` mover este `current.md` a `archive/v0.1.0-shipped-<date>.md` | ⬜ | docs | 1 archivo | `current.md` resetea a `Status: none` |
-
-## Reference
-
-- **Wave rationale:** cada tarea referencia el ADR o el spec que
-  la motiva (columna "Files").
-- **Specs alcanzadas por esta wave:** R-001 (DDD-adoption itself —
-  el spec cubre la migración, no la feature).
-- **Próxima wave sugerida:** ver
-  [`docs/roadmap.md`](../roadmap.md) (R-002 / R-003 / R-005 son
-  candidatas probables — depende de decisiones de negocio).
-- **Periodic jobs migration** (de ADR-004) **es follow-up de esta
-  wave**, no parte: queda en `TODO` para cuando se priorice.
-
-## Cómo se cierra esta wave
-
-1. `npm run docs:check` debe pasar (salida: `docs:check — OK`).
-2. Commit de cierre actualiza `progress.md` con el hash real.
-3. PR a `production` + tag `v0.1.0` (semver) + back-merge a
-   `development`.
-4. `git mv docs/implementation/current.md
-   docs/implementation/archive/v0.1.0-shipped-2026-08-04.md` (fecha
-   real).
-5. Reset `current.md` a plantilla con `Status: none`.
+1. Create (or copy this template to) `docs/implementation/v<X>.<Y>.md`
+   with the atomic tasks for the wave.
+2. Add an entry to `Active waves` in this file referencing the
+   new `v<X>.<Y>.md`.
+3. Update this file's `Status: none` → `Status: active`.
+4. Update `docs/roadmap.md` to move the relevant R-NNN rows to
+   `in_progress`.

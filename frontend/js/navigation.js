@@ -11,5 +11,6 @@
 // (ej. "Analizar patrones" en el dashboard).
 window.NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard',       href: '/index.html' },
+  { id: 'accounts',  label: 'Cuentas',         href: '/accounts.html' },
   { id: 'connect',   label: 'Conectar Google', href: '/connect.html' },
 ];

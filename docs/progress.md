@@ -35,6 +35,12 @@
 
 ## Shipped
 
+### v0.2.0 — Gestión de cuentas (rename + delete + reactivar)
+
+| Date | Version | Feature | Description | Commit | Notes |
+|---|---|---|---|---|---|
+| 2026-08-04 | v0.2.0 | `cuentas-gestion` | Nueva pantalla `/accounts.html` con gestión de cuentas conectadas: lista con nombre/GA4/GSC/estado, modal de edición (rename vía PATCH), modal de confirmación de eliminación, toggle "Mostrar inactivas" con botón Reactivar. Sidebar gana item "Cuentas". Backend: `DELETE /api/accounts/:id` (soft delete vía `activo=false`) + `GET /api/accounts` filtra `activo=true` (con `?includeInactive=true` para listar todas). Los datos históricos (tráfico, predicciones, alertas, estrategia) se preservan — recuperables vía PATCH `activo:true`. | `ce7cb57`+`c3055f7` | 2 commits en development. Refs: [frontend/accounts.html](../frontend/accounts.html), [backend/routes/accounts.js](../backend/routes/accounts.js). |
+
 ### v0.1.1 — Periodic jobs migration (ADR-004)
 
 | Date | Version | Feature | Description | Commit | Notes |

@@ -251,7 +251,7 @@ punto de la predicción (puente visual). Esto se hace en
 Configuración obligatoria:
 
 - `chart.type`: `rangeArea` cuando hay predicción, `line` cuando no
-  (ApexCharts crashea si se mezclan mal — ver BITACORA de la Fase 3).
+  (ApexCharts crashea si se mezclan mal — ver entrada del 2026-08-03 en `docs/progress.md`).
 - `chart.height: 380`.
 - `chart.fontFamily: 'inherit'`.
 - `chart.toolbar.show: true` (zoom + export).

@@ -188,8 +188,16 @@ function checkCrossReferences() {
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.isFile() && entry.name.endsWith('.md')) mdFiles.push(full);
+      if (entry.isDirectory()) {
+        // Skip the archive folder — archived files preserve pre-DDD links
+        // verbatim and are not part of the live cross-reference graph.
+        if (full.endsWith(path.join('docs', 'implementation', 'archive'))) {
+          continue;
+        }
+        walk(full);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        mdFiles.push(full);
+      }
     }
   };
   if (fs.existsSync(DOCS)) walk(DOCS);

@@ -10,9 +10,15 @@ import { ingestHistory } from '../services/ingest.js';
 export default async function accountRoutes(fastify) {
   const auth = { preHandler: fastify.requireAuth };
 
-  // GET /api/accounts — lista de cuentas trackeadas.
-  fastify.get('/api/accounts', auth, async () => {
-    const accounts = await Account.findAll({ order: [['nombre', 'ASC']] });
+  // GET /api/accounts — lista de cuentas activas.
+  // Soft-deleted (activo=false) se excluyen; usar ?includeInactive=true
+  // para listar tambien las inactivas (pagina de gestion de cuentas).
+  fastify.get('/api/accounts', auth, async (request) => {
+    const includeInactive = request.query?.includeInactive === 'true';
+    const accounts = await Account.findAll({
+      where: includeInactive ? {} : { activo: true },
+      order: [['nombre', 'ASC']],
+    });
     return { accounts };
   });
 
@@ -44,6 +50,7 @@ export default async function accountRoutes(fastify) {
   });
 
   // PATCH /api/accounts/:id — actualizar nombre/propiedad/estado.
+  // Tambien usado para reactivar una cuenta soft-deleted (activo: true).
   fastify.patch('/api/accounts/:id', auth, async (request, reply) => {
     const account = await Account.findByPk(request.params.id);
     if (!account) {
@@ -54,6 +61,20 @@ export default async function accountRoutes(fastify) {
     if (ga4_property_id !== undefined) account.ga4_property_id = ga4_property_id;
     if (gsc_site_url !== undefined) account.gsc_site_url = gsc_site_url;
     if (activo !== undefined) account.activo = activo;
+    await account.save();
+    return { account };
+  });
+
+  // DELETE /api/accounts/:id — soft delete via activo=false.
+  // Preserva trafico_historico, predicciones, alertas, estrategia, etc.
+  // (esos datos son valiosos para R-011 historial de precision del modelo).
+  // Para reactivar: PATCH /api/accounts/:id { activo: true }.
+  fastify.delete('/api/accounts/:id', auth, async (request, reply) => {
+    const account = await Account.findByPk(request.params.id);
+    if (!account) {
+      return reply.status(404).send({ error: true, message: 'Cuenta no encontrada.' });
+    }
+    account.activo = false;
     await account.save();
     return { account };
   });

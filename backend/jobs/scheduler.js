@@ -1,12 +1,12 @@
 // Trabajos programados con node-cron (§9.7, §12 4.5).
-// - Reporte periódico: corre la predicción de todas las cuentas activas,
-//   dispara alertas y guarda un snapshot en report_snapshots.
+// Tras la migración a ADR-004 (ver docs/decisions/ADR-004-periodic-jobs-governance.md),
+// este archivo solo REGISTRA schedules — la lógica de negocio vive en archivos
+// individuales (e.g. report-snapshot.js) que exportan `runJobName()`.
 //
 // La expresión cron es configurable vía REPORT_CRON (por defecto: 07:00 a diario).
-// Se puede desactivar poniendo DISABLE_CRON=true (útil en tests o al importar
-// el server para otros fines).
+// Se puede desactivar poniendo DISABLE_CRON=true (útil en tests).
 import cron from 'node-cron';
-import { generateReport } from '../services/report.js';
+import { runReportSnapshot } from './report-snapshot.js';
 
 const DEFAULT_SCHEDULE = '0 7 * * *'; // todos los días a las 07:00
 
@@ -17,17 +17,18 @@ export function startCronJobs(fastify) {
   }
 
   const schedule = process.env.REPORT_CRON || DEFAULT_SCHEDULE;
-  if (!cron.validate(schedule)) {
-    fastify.log.warn(`[cron] Expresión inválida "${schedule}"; se usa la de por defecto.`);
-  }
   const expr = cron.validate(schedule) ? schedule : DEFAULT_SCHEDULE;
+  if (schedule !== expr) {
+    fastify.log.warn(`[cron] Expresión inválida "${schedule}"; se usa "${expr}".`);
+  }
 
-  const task = cron.schedule(expr, async () => {
+  cron.schedule(expr, async () => {
     fastify.log.info('[cron] Generando reporte periódico…');
     try {
-      const snapshot = await generateReport({ save: true });
+      const result = await runReportSnapshot();
       fastify.log.info(
-        `[cron] Reporte #${snapshot.id} generado (${snapshot.contenido.con_alerta} alertas).`
+        `[cron] Reporte #${result.stats.snapshotId} generado ` +
+          `(${result.stats.conAlerta} alertas) en ${result.durationMs}ms.`
       );
     } catch (e) {
       fastify.log.error({ err: e }, '[cron] Fallo al generar el reporte periódico');
@@ -35,5 +36,4 @@ export function startCronJobs(fastify) {
   });
 
   fastify.log.info(`[cron] Reporte periódico programado ("${expr}").`);
-  return task;
 }

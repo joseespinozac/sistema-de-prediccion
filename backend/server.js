@@ -23,7 +23,7 @@ import strategyLogRoutes from './routes/strategyLog.js';
 import externalEventRoutes from './routes/externalEvents.js';
 import reportRoutes from './routes/reports.js';
 
-import { startCronJobs } from './jobs/cron.js';
+import { startCronJobs } from './jobs/scheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FRONTEND_DIR = path.resolve(__dirname, '..', 'frontend');

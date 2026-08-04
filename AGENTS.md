@@ -296,15 +296,38 @@ Reference the wave or feature spec slug when relevant
 
 ## Periodic jobs
 
-Estado actual: `backend/jobs/cron.js` mezcla schedule + handler
-+ orquestación. La migración al patrón definido en
-[`ADR-004`](docs/decisions/ADR-004-periodic-jobs-governance.md) es
-**follow-up de la wave DDD-adoption** (no parte de esta wave).
+Layout adoptado en [`ADR-004`](docs/decisions/ADR-004-periodic-jobs-governance.md).
+Cada periodic job vive en `backend/jobs/<job-name>.js` y exporta
+`runJobName()`. El orquestador no contiene lógica de negocio.
 
-Una vez migrado:
+```
+backend/jobs/
+├── scheduler.js         solo REGISTRA los schedules con node-cron.
+                         No contiene handlers.
+└── report-snapshot.js   runReportSnapshot(): genera el snapshot del
+                         reporte de tráfico y lo guarda en BD.
+```
 
-- `backend/jobs/report-snapshot.js` exporta `runReportSnapshot()`.
-- `backend/jobs/scheduler.js` registra el `node-cron` schedule.
-- `npm run jobs:run report-snapshot` invoca el job manualmente.
-- El schedule se documenta aquí (default: una vez al día a la
-  hora configurable vía `REPORT_CRON_SCHEDULE`).
+**Schedule default**: `0 7 * * *` (todos los días a las 07:00).
+Override vía `REPORT_CRON` en `.env`. Desactivar con
+`DISABLE_CRON=true` (útil en tests).
+
+**CLI runner** — `scripts/run-jobs.js`:
+
+```bash
+npm run jobs:run -- --list          # imprime jobs disponibles
+npm run jobs:run report-snapshot    # ejecuta y devuelve JSON con stats
+```
+
+Salida JSON estructurada por job (`{ jobName, startedAt, finishedAt,
+durationMs, stats }`). El script carga `.env` vía `dotenv/config`
+para que las variables necesarias estén disponibles cuando el job
+corre fuera del backend (mismo patrón que `scripts/run-python.js`).
+
+**Para agregar un nuevo job**:
+
+1. Crear `backend/jobs/<job-name>.js` exportando `runJobName(): Promise<{...}>`.
+2. Registrarlo en el mapa `JOBS` de `scripts/run-jobs.js`.
+3. Si debe correr periódicamente, añadirlo en `scheduler.js`
+   con su schedule.
+4. Documentar el schedule en esta sección.

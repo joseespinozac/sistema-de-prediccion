@@ -4,69 +4,105 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ingresar · Predictor de Tráfico E3</title>
-    <!-- Tailwind vía CDN en desarrollo (build de producción: npm run build:css). -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="/js/api.js"></script>
+    <style>
+      [x-cloak] { display: none !important; }
+    </style>
   </head>
-  <body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-    <div
-      class="w-full max-w-sm bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-      x-data="loginForm()"
-    >
-      <h1 class="text-lg font-semibold text-gray-900">Predictor de Tráfico E3</h1>
-      <p class="text-sm text-gray-500 mb-5">Acceso del equipo</p>
+  <body class="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <!-- Header con brand (solo en login, sin shell completo) -->
+    <header class="px-6 py-5">
+      <a href="/index.html" class="inline-flex items-center gap-2 text-gray-900">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 text-white">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        </span>
+        <span class="text-base font-semibold leading-tight">
+          Predictor<br>de Tráfico E3
+        </span>
+      </a>
+    </header>
 
-      <!-- Estado de error -->
+    <!-- Card de login centrada -->
+    <div class="flex-1 flex items-center justify-center p-4">
       <div
-        x-show="error"
-        x-cloak
-        class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2"
-        x-text="error"
-      ></div>
+        class="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-200 p-8"
+        x-data="loginForm()"
+        x-init="init(); $nextTick(() => lucide.createIcons())"
+      >
+        <div class="flex items-center justify-center mb-6">
+          <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100 text-blue-600">
+            <i data-lucide="log-in" class="w-6 h-6"></i>
+          </span>
+        </div>
 
-      <form @submit.prevent="submit()" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            x-model="email"
-            required
-            autocomplete="username"
-            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-          <input
-            type="password"
-            x-model="password"
-            required
-            autocomplete="current-password"
-            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-md px-3 py-2 transition"
+        <h1 class="text-center text-xl font-semibold text-gray-900 mb-1">Iniciar sesión</h1>
+        <p class="text-center text-sm text-gray-500 mb-6">Acceso del equipo E3</p>
+
+        <!-- Estado de error -->
+        <div
+          x-show="error"
+          x-cloak
+          class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-start gap-2"
         >
-          <span x-show="!loading">Ingresar</span>
-          <span x-show="loading" x-cloak>Ingresando…</span>
-        </button>
-      </form>
+          <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 shrink-0"></i>
+          <span x-text="error"></span>
+        </div>
 
-      <p class="mt-4 text-xs text-gray-400">
-        Usuario demo: <span class="font-mono">demo@e3.com</span> /
-        <span class="font-mono">demo1234</span>
-      </p>
+        <form @submit.prevent="submit()" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <div class="relative">
+              <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+              <input
+                type="email"
+                x-model="email"
+                required
+                autocomplete="username"
+                placeholder="tu@email.com"
+                class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <div class="relative">
+              <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+              <input
+                type="password"
+                x-model="password"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition"
+          >
+            <span x-show="!loading">Ingresar</span>
+            <span x-show="loading" x-cloak class="flex items-center gap-2">
+              <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+              Ingresando…
+            </span>
+            <i x-show="!loading" data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+
+        <p class="mt-6 text-xs text-gray-400 text-center">
+          Usuario demo: <span class="font-mono">demo@e3.com</span> /
+          <span class="font-mono">demo1234</span>
+        </p>
+      </div>
     </div>
 
-    <style>
-      [x-cloak] {
-        display: none !important;
-      }
-    </style>
+    <footer class="px-6 py-4 text-center text-xs text-gray-400">
+      Predictor de Tráfico E3 · v0.3.0
+    </footer>
 
     <script>
       function loginForm() {

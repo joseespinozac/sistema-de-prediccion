@@ -11,19 +11,34 @@
       [x-cloak] { display: none !important; }
     </style>
   </head>
-  <body class="bg-gray-100 text-gray-900">
+  <body class="bg-gray-50 text-gray-900">
     <div id="app-shell">
       <!-- Skeleton: ocupa el espacio del sidebar mientras shell.js inyecta. -->
       <div class="hidden md:block md:w-64 md:border-r md:border-gray-200 md:bg-white md:h-screen"></div>
     </div>
 
-    <main class="px-4 py-6 max-w-5xl w-full" x-data="accountsPage()" x-init="init(); $nextTick(() => lucide.createIcons())">
-      <h1 class="text-xl font-semibold mb-1">Cuentas conectadas</h1>
-      <p class="text-sm text-gray-500 mb-6" x-text="summaryText()"></p>
+    <main class="px-4 md:px-6 py-6 max-w-5xl w-full" x-data="accountsPage()" x-init="init(); $nextTick(() => lucide.createIcons())">
+      <!-- Header de pagina -->
+      <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 class="flex items-center gap-2 text-2xl font-semibold text-gray-900">
+            <i data-lucide="building-2" class="w-7 h-7 text-blue-600"></i>
+            Cuentas conectadas
+          </h1>
+          <p class="text-sm text-gray-500 mt-1" x-text="summaryText()"></p>
+        </div>
+        <a
+          href="/connect.html"
+          class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-2"
+        >
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          Conectar nueva cuenta
+        </a>
+      </header>
 
-      <!-- Toolbar -->
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <!-- Toolbar (toggle) -->
+      <div class="flex items-center mb-4">
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
           <input
             type="checkbox"
             x-model="showInactive"
@@ -34,23 +49,25 @@
             Mostrar inactivas (<span x-text="inactiveCount"></span>)
           </span>
         </label>
-        <a href="/connect.html" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md px-4 py-2">
-          + Conectar nueva cuenta
-        </a>
       </div>
 
       <!-- Empty state -->
       <div
         x-show="filteredAccounts.length === 0"
         x-cloak
-        class="bg-white border border-gray-200 rounded-xl p-8 text-center"
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-12 text-center"
       >
-        <p class="text-gray-600 mb-3" x-text="emptyMessage()"></p>
+        <span class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-4">
+          <i data-lucide="inbox" class="w-7 h-7"></i>
+        </span>
+        <p class="text-gray-700 font-medium mb-2" x-text="emptyMessage()"></p>
+        <p class="text-sm text-gray-500 mb-4">Conecta una cuenta de Google para empezar a trackear trafico.</p>
         <a
           href="/connect.html"
-          class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md px-4 py-2"
+          class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-2"
         >
-          Conectar una cuenta de Google
+          <i data-lucide="plug" class="w-4 h-4"></i>
+          Conectar una cuenta
         </a>
       </div>
 
@@ -58,46 +75,70 @@
       <div
         x-show="filteredAccounts.length > 0"
         x-cloak
-        class="bg-white border border-gray-200 rounded-xl overflow-hidden"
+        class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
       >
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-left text-gray-500 border-b border-gray-200">
             <tr>
-              <th class="py-2 px-3 font-medium">Nombre</th>
-              <th class="py-2 px-3 font-medium">GA4 property</th>
-              <th class="py-2 px-3 font-medium">GSC site</th>
-              <th class="py-2 px-3 font-medium">Estado</th>
-              <th class="py-2 px-3 text-right font-medium">Acciones</th>
+              <th class="py-3 px-4 font-medium">Nombre</th>
+              <th class="py-3 px-4 font-medium">GA4 property</th>
+              <th class="py-3 px-4 font-medium">GSC site</th>
+              <th class="py-3 px-4 font-medium">Estado</th>
+              <th class="py-3 px-4 text-right font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <template x-for="acc in filteredAccounts" :key="acc.id">
-              <tr class="border-b border-gray-100" :class="acc.activo ? '' : 'bg-gray-50'">
-                <td class="py-2 px-3 font-medium" :class="acc.activo ? 'text-gray-900' : 'text-gray-400'">
+              <tr class="border-b border-gray-100 hover:bg-gray-50" :class="acc.activo ? '' : 'bg-gray-50'">
+                <td class="py-3 px-4 font-medium" :class="acc.activo ? 'text-gray-900' : 'text-gray-400'">
                   <span x-text="acc.nombre"></span>
                 </td>
-                <td class="py-2 px-3 font-mono text-xs text-gray-600" x-text="acc.ga4_property_id || '—'"></td>
-                <td class="py-2 px-3 font-mono text-xs text-gray-600" x-text="acc.gsc_site_url || '—'"></td>
-                <td class="py-2 px-3">
-                  <span x-show="acc.activo" class="text-emerald-700 text-xs font-medium">● activa</span>
-                  <span x-show="!acc.activo" class="text-gray-400 text-xs">○ inactiva</span>
+                <td class="py-3 px-4 font-mono text-xs text-gray-600" x-text="acc.ga4_property_id || '—'"></td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-600" x-text="acc.gsc_site_url || '—'"></td>
+                <td class="py-3 px-4">
+                  <span
+                    x-show="acc.activo"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    activa
+                  </span>
+                  <span
+                    x-show="!acc.activo"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    inactiva
+                  </span>
                 </td>
-                <td class="py-2 px-3 text-right whitespace-nowrap">
+                <td class="py-3 px-4 text-right whitespace-nowrap">
                   <button
                     @click="openEdit(acc)"
-                    class="text-blue-600 hover:underline text-xs mr-3"
+                    class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium mr-3"
                     :disabled="!acc.activo"
-                  >Editar</button>
+                    title="Editar nombre"
+                  >
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    Editar
+                  </button>
                   <button
                     x-show="acc.activo"
                     @click="openDelete(acc)"
-                    class="text-red-600 hover:underline text-xs"
-                  >Eliminar</button>
+                    class="inline-flex items-center gap-1 text-red-600 hover:text-red-800 text-xs font-medium"
+                    title="Eliminar cuenta (soft delete)"
+                  >
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    Eliminar
+                  </button>
                   <button
                     x-show="!acc.activo"
                     @click="reactivar(acc)"
-                    class="text-blue-600 hover:underline text-xs"
-                  >Reactivar</button>
+                    class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
+                    title="Reactivar cuenta"
+                  >
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    Reactivar
+                  </button>
                 </td>
               </tr>
             </template>
@@ -109,29 +150,34 @@
       <div
         x-show="editing"
         x-cloak
-        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center p-4"
         @click.self="closeEdit()"
       >
         <div class="bg-white rounded-xl border border-gray-200 shadow-lg w-full max-w-md p-6">
-          <h2 class="text-base font-semibold mb-4">Editar nombre</h2>
+          <div class="flex items-center gap-3 mb-4">
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600">
+              <i data-lucide="pencil" class="w-5 h-5"></i>
+            </span>
+            <h2 class="text-base font-semibold">Editar nombre</h2>
+          </div>
           <form @submit.prevent="saveEdit()">
             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input
               x-model="editForm.nombre"
               required
-              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p x-show="editError" x-cloak class="mt-2 text-sm text-red-600" x-text="editError"></p>
             <div class="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 @click="closeEdit()"
-                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
               >Cancelar</button>
               <button
                 type="submit"
                 :disabled="saving"
-                class="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-md px-4 py-2"
+                class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg px-4 py-2"
               >
                 <span x-show="!saving">Guardar</span>
                 <span x-show="saving" x-cloak>Guardando…</span>
@@ -145,11 +191,16 @@
       <div
         x-show="deleting"
         x-cloak
-        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center p-4"
         @click.self="closeDelete()"
       >
         <div class="bg-white rounded-xl border border-gray-200 shadow-lg w-full max-w-md p-6">
-          <h2 class="text-base font-semibold mb-2">Eliminar cuenta</h2>
+          <div class="flex items-center gap-3 mb-4">
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 text-red-600">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </span>
+            <h2 class="text-base font-semibold">Eliminar cuenta</h2>
+          </div>
           <p class="text-sm text-gray-700 mb-1">
             ¿Eliminar "<span x-text="deleting?.nombre" class="font-medium"></span>"?
           </p>
@@ -162,13 +213,13 @@
             <button
               type="button"
               @click="closeDelete()"
-              class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+              class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
             >Cancelar</button>
             <button
               type="button"
               @click="confirmDelete()"
               :disabled="deletingLoading"
-              class="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-medium rounded-md px-4 py-2"
+              class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg px-4 py-2"
             >
               <span x-show="!deletingLoading">Eliminar</span>
               <span x-show="deletingLoading" x-cloak>Eliminando…</span>
@@ -192,7 +243,6 @@
           deleteError: '',
 
           // El shell (appShell) ya carga el usuario y expone logout.
-          // Esta pagina solo necesita sus datos de dominio (cuentas).
           async init() {
             await this.loadAccounts();
           },

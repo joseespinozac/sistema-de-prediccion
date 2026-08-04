@@ -10,7 +10,7 @@
 // dentro de una pagina se acceden via botones en el contenido
 // (ej. "Analizar patrones" en el dashboard).
 window.NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard',       href: '/index.html' },
-  { id: 'accounts',  label: 'Cuentas',         href: '/accounts.html' },
-  { id: 'connect',   label: 'Conectar Google', href: '/connect.html' },
+  { id: 'dashboard', label: 'Dashboard',       href: '/index.html',  icon: 'layout-dashboard' },
+  { id: 'accounts',  label: 'Cuentas',         href: '/accounts.html', icon: 'building-2' },
+  { id: 'connect',   label: 'Conectar Google', href: '/connect.html', icon: 'plug' },
 ];

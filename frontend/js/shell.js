@@ -1,20 +1,28 @@
 // Shell reusable: sidebar (desktop + drawer mobile) + topbar.
-// Se inyecta en `<div id="app-shell">` antes de Alpine.start() via script
-// sincronico en <head>. Asi cada pagina autenticada declara:
+// Se carga al FINAL del <body> (sincronico) para que el DOM este
+// parseado antes de inyectar. Cada pagina autenticada declara:
 //
 //   <body class="bg-gray-100 text-gray-900">
-//     <div id="app-shell"></div>
+//     <div id="app-shell"><!-- skeleton aqui --></div>
 //     <main x-data="pageComponent()" x-init="init()">...</main>
 //   </body>
 //
-// login.html NO usa el shell (pre-autenticacion).
+// shell.js:
+//   1. Reemplaza #app-shell con el shell completo (incluye un slot
+//      <div data-app-content> donde va el contenido de la pagina).
+//   2. Mueve el <main> de la pagina dentro de ese slot.
+//   3. Expone window.appShell (Alpine component) antes de que Alpine
+//      arranque (Alpine usa defer; corre despues de DOMContentLoaded).
 //
-// Orden de scripts obligatorio (sincronicos antes de Alpine):
+// login.html NO usa el shell (pre-autenticacion) — no incluye
+// el placeholder #app-shell ni carga este script.
+//
+// Orden de scripts (todos sincronicos al final del body):
 //   1. /js/api.js         window.API
 //   2. /js/navigation.js  window.NAV_ITEMS
-//   3. /js/shell.js       este archivo (inyecta markup + expone appShell)
-//   4. /js/<page>.js      componente de la pagina (dashboard, accounts, etc.)
-//   5. alpinejs (defer)   arranca tras DOMContentLoaded
+//   3. /js/<page>.js      componente de la pagina (dashboard, etc.)
+//   4. /js/shell.js       este archivo
+//   5. alpinejs (defer)   escanea DOM y arranca
 (function mountShell() {
   const SHELL_HTML = `
     <div class="flex min-h-screen" x-data="appShell">
@@ -74,7 +82,7 @@
         </nav>
       </aside>
 
-      <!-- Topbar (header encima del main, contiene hamburger en mobile + user/logout) -->
+      <!-- Contenedor del header + contenido de la pagina -->
       <div class="flex-1 min-w-0 flex flex-col">
         <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center text-sm">
           <button
@@ -89,6 +97,7 @@
           <span class="text-gray-400 mr-4" x-text="user ? user.email : ''"></span>
           <button @click="logout()" class="text-gray-600 hover:text-gray-900">Salir</button>
         </header>
+        <div class="flex-1" data-app-content></div>
       </div>
     </div>
   `;
@@ -122,9 +131,30 @@
   // Exponer appShell globalmente para que Alpine lo encuentre tras la inyeccion.
   window.appShell = appShell;
 
-  const mount = document.getElementById('app-shell');
-  if (mount) {
-    // outerHTML reemplaza el placeholder (incluyendo el skeleton si existe).
-    mount.outerHTML = SHELL_HTML;
+  // Reemplazar iconos <i data-lucide="..."> con SVG tras Alpine init.
+  // Requiere que la pagina haya cargado lucide via CDN en <head>
+  // (ver docs/page-template.md).
+  document.addEventListener('alpine:initialized', () => {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  });
+
+  const placeholder = document.getElementById('app-shell');
+  if (!placeholder) return; // sin shell en esta pagina (e.g. login.html)
+
+  // Capturar el <main> de la pagina ANTES de la inyeccion (es sibling
+  // inmediato del placeholder en la mayoria de paginas autenticadas).
+  const pageMain = placeholder.nextElementSibling;
+
+  // Reemplazar el placeholder (incluyendo el skeleton interno) con el shell.
+  placeholder.outerHTML = SHELL_HTML;
+
+  // Mover el <main> dentro del slot [data-app-content] del shell.
+  // Asi el <main> queda dentro del flex-col container, debajo del header.
+  const contentSlot = document.querySelector('[data-app-content]');
+  if (contentSlot && pageMain && pageMain.tagName === 'MAIN') {
+    contentSlot.appendChild(pageMain);
   }
 })();
+

@@ -243,6 +243,8 @@ debe manejar explícitamente sus 3 estados.
 
 ## 6. Gráfica (ApexCharts)
 
+### 6.1 Gráfica principal (tráfico + predicción)
+
 Tres series, en este orden:
 
 1. **Histórico** — `type: 'line'`, color `#2563eb` (azul), sin
@@ -270,6 +272,137 @@ Configuración obligatoria:
 - `tooltip.x.format: 'dd MMM yyyy'`.
 - `stroke.curve: 'smooth'`.
 - `dataLabels.enabled: false`.
+
+### 6.2 Annotations (eventos externos)
+
+Líneas verticales sobre la gráfica principal que marcan la fecha
+de cada `external_event` registrado. Permite correlacionar
+visualmente un cambio en el tráfico con un update de Google o un
+evento de mercado.
+
+```js
+annotations: {
+  xaxis: [
+    {
+      x: new Date(evento.fecha).getTime(),
+      borderColor: evento.tipo === 'update_google' ? '#dc2626' : '#f59e0b',
+      strokeWidth: 1,
+      strokeDashArray: 4,
+      label: {
+        text: evento.descripcion,
+        style: {
+          color: '#fff',
+          background: evento.tipo === 'update_google' ? '#dc2626' : '#f59e0b',
+          fontSize: '10px',
+          fontWeight: 500,
+        },
+        orientation: 'horizontal',
+        position: 'top',
+        offsetY: -4,
+      },
+    },
+  ],
+}
+```
+
+Color por tipo:
+- `update_google` → rojo `#dc2626` (alineado con badge rojo de "Caída").
+- `mercado` → amber `#f59e0b` (alineado con badges amber).
+
+Filtrado: solo se muestran eventos dentro del rango visible del
+chart (`this.start` a `this.end`). Si no hay eventos en rango, la
+key `annotations` se omite del todo (no se renderiza ruido).
+
+### 6.3 Donut de alertas por severidad
+
+Mini-chart en la sección "Alertas activas" que muestra la
+distribución de severidad (alta / media / baja). Permite ver al
+primer vistazo si hay alertas graves o solo menores.
+
+```js
+{
+  chart: { type: 'donut', height: 160 },
+  series: [alta, media, baja],
+  labels: ['Alta', 'Media', 'Baja'],
+  colors: ['#dc2626', '#f59e0b', '#10b981'],
+  legend: { position: 'bottom', fontSize: '12px' },
+  plotOptions: { pie: { donut: { size: '65%' } } },
+  dataLabels: { enabled: false },
+  stroke: { width: 2, colors: ['#fff'] },
+}
+```
+
+`updateOptions()` (no destroy+render) cuando cambia la lista.
+
+### 6.4 Sparklines en stat cards
+
+Mini-gráficas sin ejes, sin tooltip lateral, sin leyenda. Solo la
+línea + área tenue. Para series temporales de los últimos 14 días
+que dan contexto a un número grande.
+
+```js
+{
+  chart: {
+    type: 'area',
+    height: 32,
+    sparkline: { enabled: true },
+    animations: { enabled: false },
+  },
+  series: [{ data: valoresPorDia }],
+  stroke: { curve: 'smooth', width: 2 },
+  colors: ['#color-por-tipo'],
+  fill: { opacity: 0.15 },
+  tooltip: {
+    enabled: true,
+    theme: 'light',
+    x: { show: false },
+    y: { formatter: (v) => v + ' eventos' },
+  },
+}
+```
+
+**Regla:** sparklines solo en stat cards con serie temporal real:
+
+| Stat card | ¿Sparkline? | Por qué |
+|---|---|---|
+| Cuentas activas | ❌ no | Count estático (cuántas cuentas existen) |
+| Alertas activas | ✅ sí | Alerts por día (últimos 14 días) |
+| Eventos externos | ✅ sí | Eventos por día (últimos 14 días) |
+| Acciones registradas | ✅ sí | Acciones de estrategia por día (últimos 14 días) |
+
+Colores (alineados con los iconos de cada stat card):
+
+| Card | Color sparkline | Color icono bg |
+|---|---|---|
+| Alertas activas | `#dc2626` (rojo) | `bg-red-50` |
+| Eventos externos | `#f59e0b` (amber) | `bg-amber-50` |
+| Acciones registradas | `#10b981` (emerald) | `bg-emerald-50` |
+
+`updateSeries()` (no destroy+render) cuando llegan nuevos datos.
+
+### 6.5 Datos de sparklines (backend)
+
+Endpoint: `GET /api/dashboard/sparklines?accountId=N&days=14`.
+
+Respuesta:
+
+```json
+{
+  "days": 14,
+  "dateStrs": ["2026-07-22", "2026-07-23", ..., "2026-08-04"],
+  "alerts":    [0, 1, 0, 0, 2, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+  "events":    [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+  "strategy":  [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+}
+```
+
+Cada array tiene `days` elementos (índice 0 = día más antiguo).
+
+Implementación en `backend/services/dashboardSparklines.js`:
+- alerts via JOIN prediction (filtra por account_id).
+- strategy directo por account_id.
+- events: `account_id = X OR NULL` (incluye eventos globales).
+- Conteo por día en JS (no SQL) para portabilidad SQLite ↔ Postgres.
 
 ---
 

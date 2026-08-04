@@ -33,6 +33,7 @@
 
       <!-- Stat cards row -->
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Cuentas activas: sin sparkline (count estatico, sin serie temporal) -->
         <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
           <div class="flex items-center gap-3 mb-3">
             <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600">
@@ -43,32 +44,44 @@
           <p class="text-3xl font-semibold text-gray-900" x-text="accounts.length"></p>
         </div>
 
+        <!-- Alertas activas: con sparkline (ultimos 14 dias) -->
         <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 text-red-600">
-              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-            </span>
-            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Alertas activas</span>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 text-red-600">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+              </span>
+              <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Alertas activas</span>
+            </div>
+            <div id="sparkline-alerts" class="w-20 h-8"></div>
           </div>
           <p class="text-3xl font-semibold text-gray-900" x-text="alerts.length"></p>
         </div>
 
+        <!-- Eventos externos: con sparkline -->
         <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600">
-              <i data-lucide="calendar" class="w-5 h-5"></i>
-            </span>
-            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Eventos externos</span>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+              </span>
+              <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Eventos externos</span>
+            </div>
+            <div id="sparkline-events" class="w-20 h-8"></div>
           </div>
           <p class="text-3xl font-semibold text-gray-900" x-text="events.length"></p>
         </div>
 
+        <!-- Acciones registradas: con sparkline -->
         <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600">
-              <i data-lucide="check-square" class="w-5 h-5"></i>
-            </span>
-            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Acciones registradas</span>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+              </span>
+              <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Acciones registradas</span>
+            </div>
+            <div id="sparkline-strategy" class="w-20 h-8"></div>
           </div>
           <p class="text-3xl font-semibold text-gray-900" x-text="strategyEntries.length"></p>
         </div>
@@ -239,10 +252,15 @@
       <div x-show="accounts.length > 0" x-cloak class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Alertas -->
         <section class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-          <h2 class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-            <i data-lucide="alert-triangle" class="w-4 h-4 text-gray-400"></i>
-            Alertas activas
-          </h2>
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <h2 class="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-gray-400"></i>
+              Alertas activas
+            </h2>
+            <div x-show="alerts.length > 0" x-cloak class="shrink-0 w-32 -mt-2 -mr-2">
+              <div id="chart-alerts-donut"></div>
+            </div>
+          </div>
           <p x-show="!loadingAlerts && alerts.length === 0" x-cloak class="text-sm text-gray-400">
             Sin alertas activas.
           </p>

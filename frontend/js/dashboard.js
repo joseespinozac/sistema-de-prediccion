@@ -54,6 +54,10 @@ function dashboard() {
     evDescripcion: '',
     savingEvent: false,
 
+    // --- Chart enhancements (v0.4.0) ---
+    donutAlerts: null,           // ApexCharts instance para donut por severidad
+    sparklines: { alerts: [], events: [], strategy: [] }, // series por dia (14d)
+
     async init() {
       try {
         const me = await API.get('/api/auth/me');
@@ -103,7 +107,12 @@ function dashboard() {
       this.patternsEpisodios = [];
       await Promise.all([this.loadUrls(), this.loadQueries()]);
       await this.loadChart();
-      await Promise.all([this.loadAlerts(), this.loadStrategy(), this.loadEvents()]);
+      await Promise.all([
+        this.loadAlerts(),
+        this.loadStrategy(),
+        this.loadEvents(),
+        this.loadSparklines(),
+      ]);
     },
 
     async loadUrls() {
@@ -342,6 +351,10 @@ function dashboard() {
         fillOpacity.push(0.2, 1);
       }
 
+      // Annotations: external_events en el rango visible del chart.
+      // Colorear por tipo: update_google rojo, mercado amber.
+      const annotations = this.buildEventAnnotations();
+
       const options = {
         chart: {
           // 'rangeArea' soporta combo con líneas; 'line' se usa cuando no hay banda.
@@ -363,6 +376,7 @@ function dashboard() {
         dataLabels: { enabled: false },
         tooltip: { x: { format: 'dd MMM yyyy' } },
         noData: { text: 'Sin datos para este rango.' },
+        ...(annotations ? { annotations } : {}),
       };
 
       if (this.chart) {
@@ -370,6 +384,41 @@ function dashboard() {
       }
       this.chart = new ApexCharts(document.querySelector('#chart'), options);
       this.chart.render();
+    },
+
+    // Convierte this.events en annotations de ApexCharts filtradas al
+    // rango visible del chart (start..end). Devuelve null si no hay
+    // eventos en rango, para omitir la key annotations.
+    buildEventAnnotations() {
+      if (!this.events?.length || !this.start || !this.end) return null;
+      const startMs = new Date(this.start).getTime();
+      const endMs = new Date(this.end).getTime() + 24 * 60 * 60 * 1000 - 1;
+      const inRange = this.events.filter((e) => {
+        const t = new Date(e.fecha).getTime();
+        return t >= startMs && t <= endMs;
+      });
+      if (!inRange.length) return null;
+      return {
+        xaxis: inRange.map((e) => ({
+          x: new Date(e.fecha).getTime(),
+          borderColor: e.tipo === 'update_google' ? '#dc2626' : '#f59e0b',
+          strokeWidth: 1,
+          strokeDashArray: 4,
+          label: {
+            text: e.descripcion,
+            style: {
+              color: '#fff',
+              background: e.tipo === 'update_google' ? '#dc2626' : '#f59e0b',
+              fontSize: '10px',
+              fontWeight: 500,
+              padding: { left: 4, right: 4, top: 2, bottom: 2 },
+            },
+            orientation: 'horizontal',
+            position: 'top',
+            offsetY: -4,
+          },
+        })),
+      };
     },
 
     metricLabel() {
@@ -386,6 +435,7 @@ function dashboard() {
       try {
         const data = await API.get(`/api/alerts?accountId=${this.accountId}`);
         this.alerts = data.alerts || [];
+        this.$nextTick(() => this.renderDonutAlerts());
       } catch (e) {
         this.error = e.message;
       } finally {
@@ -461,9 +511,94 @@ function dashboard() {
       try {
         const data = await API.get(`/api/external-events?accountId=${this.accountId}`);
         this.events = data.events || [];
+        // Re-render el chart principal para incluir las annotations.
+        if (this.chart) this.renderChart();
       } catch (e) {
         this.error = e.message;
       }
+    },
+
+    // --- Sparklines para stat cards ---
+    async loadSparklines() {
+      try {
+        const data = await API.get(
+          `/api/dashboard/sparklines?accountId=${this.accountId}&days=14`
+        );
+        this.sparklines = {
+          alerts: data.alerts || [],
+          events: data.events || [],
+          strategy: data.strategy || [],
+        };
+        this.$nextTick(() => {
+          this.initApexSparkline('sparkline-alerts', this.sparklines.alerts, '#dc2626');
+          this.initApexSparkline('sparkline-events', this.sparklines.events, '#f59e0b');
+          this.initApexSparkline('sparkline-strategy', this.sparklines.strategy, '#10b981');
+        });
+      } catch (e) {
+        console.error('loadSparklines:', e);
+      }
+    },
+
+    initApexSparkline(elId, values, color) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      // Reusar instancia si ya existe; solo updateSeries (mas barato).
+      if (this[`sparkline_${elId}`]) {
+        this[`sparkline_${elId}`].updateSeries([{ data: values }]);
+        return;
+      }
+      const chart = new ApexCharts(el, {
+        chart: {
+          type: 'area',
+          height: 32,
+          sparkline: { enabled: true },
+          animations: { enabled: false },
+        },
+        series: [{ data: values }],
+        stroke: { curve: 'smooth', width: 2 },
+        colors: [color],
+        fill: { opacity: 0.15 },
+        tooltip: {
+          enabled: true,
+          theme: 'light',
+          x: { show: false },
+          y: { formatter: (v) => v + (v === 1 ? ' evento' : ' eventos') },
+        },
+      });
+      chart.render();
+      this[`sparkline_${elId}`] = chart;
+    },
+
+    // --- Donut: alertas por severidad ---
+    renderDonutAlerts() {
+      const counts = { alta: 0, media: 0, baja: 0 };
+      for (const al of this.alerts) {
+        if (counts[al.severidad] !== undefined) counts[al.severidad] += 1;
+      }
+      const series = [counts.alta, counts.media, counts.baja];
+      if (this.donutAlerts) {
+        this.donutAlerts.updateOptions({
+          series,
+          labels: ['Alta', 'Media', 'Baja'],
+        });
+        return;
+      }
+      const el = document.getElementById('chart-alerts-donut');
+      if (!el) return;
+      this.donutAlerts = new ApexCharts(el, {
+        chart: { type: 'donut', height: 160 },
+        series,
+        labels: ['Alta', 'Media', 'Baja'],
+        colors: ['#dc2626', '#f59e0b', '#10b981'],
+        legend: { position: 'bottom', fontSize: '12px', markers: { size: 5 } },
+        plotOptions: { pie: { donut: { size: '65%' } } },
+        dataLabels: { enabled: false },
+        stroke: { width: 2, colors: ['#fff'] },
+        tooltip: {
+          y: { formatter: (v) => v + (v === 1 ? ' alerta' : ' alertas') },
+        },
+      });
+      this.donutAlerts.render();
     },
 
     async saveEvent() {

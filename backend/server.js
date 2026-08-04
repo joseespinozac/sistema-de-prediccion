@@ -99,6 +99,23 @@ async function start() {
 
   // Trabajos programados (reporte periódico). Se puede desactivar con DISABLE_CRON=true.
   startCronJobs(fastify);
+
+  // Graceful shutdown: node --watch / Docker stop / K8s SIGTERM cierran el server
+  // para liberar el puerto antes de que el proceso termine (sin esto, --watch
+  // deja el puerto bindeado y la nueva instancia falla con EADDRINUSE).
+  const shutdown = async (signal) => {
+    fastify.log.info(`Recibido ${signal}, cerrando Fastify...`);
+    try {
+      await fastify.close();
+      fastify.log.info('Fastify cerrado. Puerto liberado.');
+      process.exit(0);
+    } catch (err) {
+      fastify.log.error(err, 'Error cerrando Fastify');
+      process.exit(1);
+    }
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 start();

@@ -319,7 +319,6 @@ de items. Una línea por feature nueva:
 window.NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard',       href: '/index.html' },
   { id: 'connect',   label: 'Conectar Google', href: '/connect.html' },
-  { id: 'patterns',  label: 'Patrones',        href: '/index.html#patterns' },
   // futuras features se agregan aquí cuando se implementen
 ];
 ```
@@ -328,9 +327,9 @@ window.NAV_ITEMS = [
 
 | Caso | Forma |
 |---|---|
-| Página nueva | `{ id, label, href: '/ruta.html' }` |
-| Anchor en página existente | `{ ..., href: '/index.html#seccion' }` (la sección debe tener `id="seccion"` y `scroll-mt-N`) |
+| Página completa | `{ id, label, href: '/ruta.html' }` ✅ preferido |
 | Item deshabilitado (feature planeada, no implementada) | `{ ..., disabled: true }` (atenuado, no clickeable) |
+| ❌ **Evitar anchors** (`/pagina#seccion`) | Confunden al usuario: visualmente parece navegar a otra página pero solo hace scroll dentro de la actual. Las secciones dentro de una página se acceden con botones en el contenido. |
 
 ### Active state logic
 

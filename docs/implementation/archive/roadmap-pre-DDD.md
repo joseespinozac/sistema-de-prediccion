@@ -1,3 +1,14 @@
+# ARCHIVED — superseded by `../../roadmap.md`
+
+> Este archivo se conserva solo como referencia histórica del estado del roadmap antes de la adopción de Documentation-Driven Development ([`ADR-000`](../../decisions/ADR-000-ddd-adoption.md)). Su contenido:
+>
+> - Mezcla status con emojis (📋/✅/📄/🔧); el nuevo `roadmap.md` usa el enum `pending`/`completed`/`rejected`/`deferred`.
+> - No tiene links a feature specs porque aún no existían.
+>
+> NO edites este archivo. Para trabajo futuro, edita [`../../roadmap.md`](../../roadmap.md).
+
+---
+
 # Roadmap — Predictor de Tráfico E3
 
 Estrategia documentada de features futuras, para planificar antes de

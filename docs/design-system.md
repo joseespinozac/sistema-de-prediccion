@@ -265,10 +265,12 @@ Configuración obligatoria:
 
 ---
 
-## 7. Sidebar / navegación
+## 7. Shell de la app (sidebar + topbar inyectados)
 
-Sidebar vertical fijo a la izquierda en `md+`. En mobile colapsa a
-un drawer overlay con hamburger toggle en el header.
+El shell es la "chrome" común a todas las páginas autenticadas
+(sidebar + topbar + drawer mobile). **Se inyecta una sola vez en
+`<div id="app-shell">`** por `frontend/js/shell.js` — las páginas
+no la duplican.
 
 ### Estructura del layout
 
@@ -278,7 +280,7 @@ desktop (≥md):
 │ SIDEBAR  │ Header (hamburger mobile + user/logout)│
 │ (w-56)   ├────────────────────────────────────────┤
 │  brand   │                                        │
-│  nav     │ Main content                          │
+│  nav     │ Main content (inyectado por la pagina)│
 │          │                                        │
 └──────────┴────────────────────────────────────────┘
 
@@ -291,24 +293,53 @@ mobile (<md):
 [☰ → drawer desliza desde la izquierda + backdrop]
 ```
 
-### Tokens
+### Anatomía de una página autenticada (mínima)
 
-| Elemento | Desktop | Mobile |
-|---|---|---|
-| Ancho sidebar | `w-56` (224px) | `w-64` (256px) cuando drawer abierto |
-| Borde derecho | `border-r border-gray-200` | n/a |
-| Fondo | `bg-white` | `bg-white` (drawer) / `bg-black/50` (backdrop) |
-| Padding interno | `p-3` para nav, `p-4` para brand top | igual |
+```html
+<!doctype html>
+<html lang="es">
+  <head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>[x-cloak] { display: none !important; }</style>
+  </head>
+  <body class="bg-gray-100 text-gray-900">
+    <div id="app-shell">
+      <!-- Skeleton: ocupa el espacio del sidebar mientras shell.js inyecta. -->
+      <div class="hidden md:block md:w-56 md:border-r md:border-gray-200 md:bg-white md:min-h-screen"></div>
+    </div>
 
-### Item activo vs inactivo
+    <main class="px-4 py-6 max-w-6xl w-full" x-data="dashboard()" x-init="init()">
+      <!-- contenido de la pagina aqui -->
+    </main>
 
-| Estado | Clases |
-|---|---|
-| Inactivo | `block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50` |
-| Activo | `block rounded-md px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700` |
+    <script src="/js/api.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/shell.js"></script>
+  </body>
+</html>
+```
 
-Ambos usan el mismo `px-3 py-2` para que el cambio de estado no
-mueva el layout.
+`shell.js` se carga **al final del body** (sincronico, DOM ya
+parseado) — antes que Alpine arranque (Alpine usa `defer`). shell.js
+hace:
+
+1. Captura el `<main>` hermano del placeholder (siguienteElementSibling).
+2. Reemplaza `#app-shell` con el shell completo (template literal).
+3. Mueve el `<main>` capturado dentro del slot
+   `[data-app-content]` del shell (queda dentro del flex-col container,
+   debajo del header).
+4. Expone `window.appShell` (Alpine component) para que el shell
+   se inicialice cuando Alpine escanee el DOM.
+
+### Skeleton (prevención de layout shift)
+
+Sin skeleton, mientras shell.js no haya inyectado el shell, el
+espacio del sidebar está vacío y el contenido se "corre" hacia la
+izquierda cuando aparece. El `<div class="hidden md:block md:w-56...">`
+dentro de `#app-shell` ocupa exactamente el ancho del sidebar
+desktop y desaparece con el placeholder tras la inyección.
 
 ### Single source of truth: `NAV_ITEMS`
 
@@ -318,8 +349,8 @@ de items. Una línea por feature nueva:
 ```js
 window.NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard',       href: '/index.html' },
+  { id: 'accounts',  label: 'Cuentas',         href: '/accounts.html' },
   { id: 'connect',   label: 'Conectar Google', href: '/connect.html' },
-  // futuras features se agregan aquí cuando se implementen
 ];
 ```
 
@@ -339,9 +370,27 @@ function active(item) {
 }
 ```
 
-- `/index.html` sin hash → matchea item con `href: '/index.html'`.
-- `/index.html#patterns` → matchea item con `href: '/index.html#patterns'`.
-- `/login.html` → no matchea ningún item, todos inactivos.
+Implementada en `appShell` (dentro de shell.js).
+
+### Tokens del shell
+
+| Elemento | Desktop | Mobile |
+|---|---|---|
+| Ancho sidebar | `w-56` (224px) | `w-64` (256px) cuando drawer abierto |
+| Borde derecho | `border-r border-gray-200` | n/a |
+| Fondo | `bg-white` | `bg-white` (drawer) / `bg-black/50` (backdrop) |
+| Padding interno | `p-3` para nav, `p-4` para brand top | igual |
+| Skeleton placeholder | `md:w-56 md:border-r md:border-gray-200 md:bg-white md:min-h-screen` | n/a (drawer cerrado) |
+
+### Item activo vs inactivo
+
+| Estado | Clases |
+|---|---|
+| Inactivo | `block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50` |
+| Activo | `block rounded-md px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700` |
+
+Ambos usan el mismo `px-3 py-2` para que el cambio de estado no
+mueva el layout.
 
 ### Drawer mobile (z-index y animación)
 
@@ -350,18 +399,31 @@ function active(item) {
 | Backdrop | `z-40` | sin animación (aparece/desaparece) |
 | Drawer | `z-50` | `x-transition` slide-in 200ms / slide-out 150ms |
 
-El click en el backdrop cierra el drawer (`@click="close()"`).
+El click en el backdrop cierra el drawer (`@click="open = false"`).
 El click en cualquier item del drawer también cierra
-(`@click="close()"`) antes de navegar.
+(`@click="open = false"`) antes de navegar.
 
-### Páginas donde aparece
+### Páginas que usan el shell
 
-| Página | Sidebar | Por qué |
+| Página | Shell | Por qué |
 |---|---|---|
-| `login.html` | ❌ no | Pre-autenticación, no hay a dónde navegar |
+| `login.html` | ❌ no | Pre-autenticación, no hay chrome |
 | `index.html` | ✅ sí | Dashboard principal |
-| `connect.html` | ✅ sí | Setup de cuenta, accesible post-login |
+| `connect.html` | ✅ sí | Setup de cuenta |
+| `accounts.html` | ✅ sí | Gestión de cuentas |
 | Páginas futuras | ✅ sí | Por defecto en todas las autenticadas |
+
+### Reglas de uso
+
+1. **Cualquier nueva página autenticada** declara el shell —
+   no copies el markup del sidebar.
+2. **Si necesitas email del usuario o logout**, no los pidas
+   tú — el shell los expone via Alpine scope inheritance
+   (`this.user`, `logout()` disponibles en `<main>`).
+3. **Si una página solo necesita datos de dominio**, no declares
+   `user` ni `logout` en su Alpine component — reusa los del shell.
+4. **El `<main>` debe ser hermano inmediato del `#app-shell`** —
+   shell.js asume `placeholder.nextElementSibling` para encontrarlo.
 
 ---
 

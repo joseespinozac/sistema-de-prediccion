@@ -61,7 +61,7 @@ funcionando.
 **Atajo:** `npm run dev` levanta Node + Python juntos con
 `concurrently` (requiere el `.venv` ya creado y el token exportado).
 
-Abre <http://localhost:3000/login.html> e ingresa con la cuenta
+Abre <http://localhost:3001/login.html> e ingresa con la cuenta
 demo: `demo@e3.com` / `demo1234`.
 
 ## Dev commands

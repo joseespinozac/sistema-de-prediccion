@@ -16,8 +16,8 @@ function asFloat(value, fallback) {
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isProd: (process.env.NODE_ENV || 'development') === 'production',
-  port: asInt(process.env.PORT, 3000),
-  appBaseUrl: process.env.APP_BASE_URL || 'http://localhost:3000',
+  port: asInt(process.env.PORT, 3001),
+  appBaseUrl: process.env.APP_BASE_URL || 'http://localhost:3001',
 
   sessionSecret: process.env.SESSION_SECRET || '',
   encryptionKey: process.env.ENCRYPTION_KEY || '',
@@ -27,7 +27,7 @@ export const env = {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     redirectUri:
       process.env.GOOGLE_REDIRECT_URI ||
-      'http://localhost:3000/api/auth/google/callback',
+      'http://localhost:3001/api/auth/google/callback',
   },
 
   pagespeedApiKey: process.env.PAGESPEED_API_KEY || '',

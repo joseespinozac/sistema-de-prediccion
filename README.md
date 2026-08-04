@@ -57,7 +57,7 @@ no requiere compilación. Para habilitar Prophet: `pip install prophet`.
 > **Atajo:** `npm run dev` levanta backend Node + servicio Python juntos con
 > `concurrently` (requiere el `.venv` ya creado y el token exportado).
 
-Abre <http://localhost:3000/login.html> e ingresa con el usuario demo:
+Abre <http://localhost:3001/login.html> e ingresa con el usuario demo:
 
 - **Email:** `demo@e3.com`
 - **Contraseña:** `demo1234`
@@ -87,7 +87,7 @@ El flujo OAuth ya está implementado; solo falta generar las credenciales:
    para scopes sensibles). *Confirmar con Yamilet que existe el Workspace (§14).*
 4. **Credenciales → Crear credenciales → ID de cliente de OAuth → Aplicación web.**
    - URI de redirección autorizado:
-     `http://localhost:3000/api/auth/google/callback`
+      `http://localhost:3001/api/auth/google/callback`
 5. Copia el `client_id` y el `client_secret` a tu `.env`
    (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
 6. Reinicia el servidor, entra a **Conectar Google** en la app y sigue el flujo.

@@ -2,8 +2,16 @@
 // ultimos N dias para alertas, eventos externos y acciones de estrategia.
 // Usado por el endpoint GET /api/dashboard/sparklines.
 import { Op } from 'sequelize';
-import { subDays, startOfDay, format } from 'date-fns';
 import { Alert, ExternalEvent, StrategyLog, Prediction } from '../db/index.js';
+
+// Helpers de fecha nativos (sin dependencia de date-fns).
+const DAY_MS = 24 * 60 * 60 * 1000;
+const subDays = (date, n) => new Date(date.getTime() - n * DAY_MS);
+const startOfDay = (date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+const pad2 = (n) => String(n).padStart(2, '0');
+const formatYMD = (date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 
 /**
  * Cuenta eventos por dia en un rango de fechas.
@@ -14,7 +22,7 @@ import { Alert, ExternalEvent, StrategyLog, Prediction } from '../db/index.js';
  */
 function countByDay(dates, records, getFecha) {
   const counts = new Array(dates.length).fill(0);
-  const dayMs = 24 * 60 * 60 * 1000;
+  const dayMs = DAY_MS;
   const startMs = dates[0].getTime();
   for (const r of records) {
     const f = getFecha(r);
@@ -48,7 +56,7 @@ export async function getSparklines(accountId, days = 14) {
     dates.push(subDays(today, n - 1 - i));
   }
 
-  const dateStrs = dates.map((d) => format(d, 'yyyy-MM-dd'));
+  const dateStrs = dates.map(formatYMD);
 
   // Alertas: via prediction -> account.
   // Strategy: directo por account_id.
@@ -70,7 +78,7 @@ export async function getSparklines(accountId, days = 14) {
     }),
     ExternalEvent.findAll({
       where: {
-        fecha: { [Op.gte]: format(start, 'yyyy-MM-dd') },
+        fecha: { [Op.gte]: formatYMD(start) },
         [Op.or]: [{ account_id: null }, { account_id: accountId }],
       },
       attributes: ['fecha'],

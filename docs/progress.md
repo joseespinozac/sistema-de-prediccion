@@ -35,6 +35,12 @@
 
 ## Shipped
 
+### v0.4.1 — Fila de acciones en filtros del dashboard
+
+| Date | Version | Feature | Description | Commit | Notes |
+|---|---|---|---|---|---|
+| 2026-08-04 | v0.4.1 | `dashboard-filters-row` | Ajuste visual: filtros del dashboard (selector URL/Query + 3 botones Importar / Generar predicción / Patrones) en una sola fila flex row, eliminando el cell vacío del grid anterior (`grid-cols-3`). En desktop, selector y grupo de botones comparten fila horizontal sin hueco intermedio. En mobile, se apilan vertical. Sin cambios funcionales (lógica de `x-show`/`x-model`/`@click` intacta). Docs: nueva sub-sección §4.7 "Filas de acciones" en design-system con el patrón, las clases Tailwind y los anti-patrones a evitar. | `666bd27`+`<docs>` | 2 commits en development. Refs: [`docs/design-system.md §4.7`](design-system.md#47-filas-de-acciones-filtros-contextuales--grupo-de-botones), [`frontend/index.html`](../frontend/index.html). |
+
 ### v0.4.0 — Chart enhancements (annotations + donut + sparklines)
 
 | Date | Version | Feature | Description | Commit | Notes |

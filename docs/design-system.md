@@ -224,6 +224,45 @@ en el JS (no se modela con clase separada).
 </div>
 ```
 
+### 4.7 Filas de acciones (filtros contextuales + grupo de botones)
+
+Patrón: una sección de la página con controles contextuales (filtros,
+selects de scope) a la izquierda y un grupo de botones de acción a la
+derecha. Comparten la misma fila horizontal en desktop y se apilan
+verticalmente en mobile.
+
+```html
+<div class="mt-4 flex flex-col md:flex-row md:items-end gap-3">
+  <!-- Celda izquierda: filtros / contexto -->
+  <div class="flex-1 md:max-w-xs">
+    <label class="block text-xs font-medium text-gray-500 mb-1">
+      <span x-show="isGa4()">URL (opcional)</span>
+      <span x-show="!isGa4()">Consulta (opcional)</span>
+    </label>
+    <select ...>...</select>
+  </div>
+  <!-- Celda derecha: grupo de botones (empujado con ml-auto) -->
+  <div class="flex gap-2 md:ml-auto">
+    <button class="...">Importar</button>
+    <button class="...">Generar predicción</button>
+    <button class="...">Patrones</button>
+  </div>
+</div>
+```
+
+| Regla | Por qué |
+|---|---|
+| `flex flex-col md:flex-row` | Stacks vertical en mobile, side-by-side en desktop |
+| `md:items-end` | Alinea el botón con el bottom del select (los selects son más altos que los botones) |
+| `flex-1 md:max-w-xs` | El filtro ocupa el espacio disponible pero con tope para no estirarse demasiado |
+| `md:ml-auto` | Empuja los botones al borde derecho en desktop |
+| `flex gap-2` (NO `flex-wrap`) | Garantiza que los 3 botones quedan en la misma fila horizontal incluso en viewports intermedios |
+| Iconos Lucide a la izquierda del label | Coherencia con el resto de la UI |
+
+**Anti-patrones a evitar:**
+- `grid grid-cols-3` con celda vacía entre el filtro y los botones → deja un gap visual artificial.
+- `flex-wrap` en el grupo de botones → pueden apilarse en viewports intermedios, rompiendo la regla "misma fila".
+
 ---
 
 ## 5. Estados de carga y error

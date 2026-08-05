@@ -152,26 +152,26 @@
           </div>
         </div>
 
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div x-show="isGa4()">
-            <label class="block text-xs font-medium text-gray-500 mb-1">URL (opcional)</label>
-            <select x-model="urlId" @change="onFilterChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <div class="mt-4 flex flex-col md:flex-row md:items-end gap-3">
+          <div class="flex-1 md:max-w-xs">
+            <label class="block text-xs font-medium text-gray-500 mb-1">
+              <span x-show="isGa4()">URL (opcional)</span>
+              <span x-show="!isGa4()">Consulta (opcional)</span>
+            </label>
+            <select x-show="isGa4()" x-model="urlId" @change="onFilterChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
               <option value="">Todas las URLs</option>
               <template x-for="u in urls" :key="u.id">
                 <option :value="u.id" x-text="u.url"></option>
               </template>
             </select>
-          </div>
-          <div x-show="!isGa4()">
-            <label class="block text-xs font-medium text-gray-500 mb-1">Consulta (opcional)</label>
-            <select x-model="queryId" @change="onFilterChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <select x-show="!isGa4()" x-model="queryId" @change="onFilterChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
               <option value="">Todas las consultas</option>
               <template x-for="q in queries" :key="q.id">
                 <option :value="q.id" x-text="q.query"></option>
               </template>
             </select>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="flex gap-2 md:ml-auto">
             <button
               @click="importHistoryManual()"
               :disabled="importingHistory"

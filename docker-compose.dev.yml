@@ -1,0 +1,62 @@
+# Local deployment — Node api + Python prediction-service
+#
+# Topology:
+#   - api:                 Node 20 + Fastify, also serves the static frontend.
+#                          Listens on :3001 internally. Host port 3001 is
+#                          reachable on the LAN at 192.168.68.109:3001.
+#   - prediction-service:  Python 3.11 + FastAPI + Prophet fallback.
+#                          Internal only — never published to the host.
+#                          Reachable from api via http://prediction-service:8000.
+#
+# All credentials live in /opt/myapp/deploy/dev/.env on this host
+# (mode 600, deploy:deploy). The api container reads it via env_file;
+# the prediction-service only needs INTERNAL_TOKEN.
+#
+# SQLite database is persisted on the host at
+# /opt/myapp/data/sistema-de-prediccion/database.sqlite so it survives
+# container rebuilds.
+
+name: predictor-trafico-dev
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: predictor-trafico-api:dev
+    container_name: predictor-trafico-api
+    restart: unless-stopped
+    env_file:
+      - /opt/myapp/deploy/dev/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # Inside the compose network, the Python service is reachable by name.
+      PREDICTION_SERVICE_URL: http://prediction-service:8000
+    volumes:
+      - sqlite-data:/app/backend/db/data
+    networks:
+      - predictor-net
+    ports:
+      - "3001:3001"
+
+  prediction-service:
+    build:
+      context: ./prediction-service
+      dockerfile: Dockerfile
+    image: predictor-trafico-prediction:dev
+    container_name: predictor-trafico-prediction
+    restart: unless-stopped
+    env_file:
+      - /opt/myapp/deploy/dev/.env
+    networks:
+      - predictor-net
+    # No host port: internal-only. The api container reaches it through
+    # the Docker network's built-in DNS at http://prediction-service:8000.
+
+volumes:
+  sqlite-data:
+
+networks:
+  predictor-net:
+    driver: bridge

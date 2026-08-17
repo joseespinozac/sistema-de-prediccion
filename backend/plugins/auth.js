@@ -29,7 +29,9 @@ async function authPlugin(fastify) {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
-      secure: env.isProd, // Secure solo en producción (HTTPS)
+      // Secure depende del esquema de APP_BASE_URL, no de NODE_ENV:
+      // en LAN HTTP la cookie Secure no se devuelve y la sesión se "pierde".
+      secure: env.appBaseUrl.startsWith('https://'),
       maxAge: 60 * 60 * 8, // 8 horas
     },
   });

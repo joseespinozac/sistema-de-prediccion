@@ -4,8 +4,9 @@
 require('dotenv').config();
 const path = require('node:path');
 
-// Ruta del archivo SQLite (desarrollo). Vive dentro de backend/db.
-const sqliteStorage = path.resolve(__dirname, '..', 'db', 'database.sqlite');
+// Ruta del archivo SQLite. Vive dentro de backend/db/data para que el
+// volumen de docker-compose (/app/backend/db/data) pueda persistirlo.
+const sqliteStorage = path.resolve(__dirname, '..', 'db', 'data', 'database.sqlite');
 
 const common = {
   // Silenciar el logging SQL por defecto; se puede activar con DB_LOGGING=true.
@@ -28,13 +29,20 @@ module.exports = {
     dialect: 'sqlite',
     storage: ':memory:',
   },
-  // Placeholder para Fase 5 (migración a Postgres/Neon). No se usa todavía.
-  production: {
-    ...common,
-    dialect: 'postgres',
-    use_env_variable: 'DATABASE_URL',
-    dialectOptions: {
-      ssl: { require: true, rejectUnauthorized: false },
-    },
-  },
+  // Placeholder para Fase 5 (migración a Postgres/Neon). Hasta entonces,
+  // producción usa SQLite por defecto; se puede sobreescribir vía DATABASE_URL.
+  production: process.env.DATABASE_URL
+    ? {
+        ...common,
+        dialect: 'postgres',
+        use_env_variable: 'DATABASE_URL',
+        dialectOptions: {
+          ssl: { require: true, rejectUnauthorized: false },
+        },
+      }
+    : {
+        ...common,
+        dialect: 'sqlite',
+        storage: sqliteStorage,
+      },
 };

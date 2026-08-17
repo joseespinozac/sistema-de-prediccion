@@ -1,0 +1,43 @@
+FROM node:20-bookworm-slim AS base
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev=false
+
+FROM deps AS tailwind
+# Tailwind CLI is needed at build time to compile app.css (gitignored).
+# Installed as a devDep here so the prod image stays small.
+COPY frontend ./frontend
+RUN npx tailwindcss -i ./frontend/css/input.css -o ./frontend/css/app.css --minify
+
+FROM node:20-bookworm-slim AS runtime
+ENV NODE_ENV=production \
+    PORT=3001
+WORKDIR /app
+
+# Production deps only — sqlite3 needs build tools on first install.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 build-essential ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+COPY backend ./backend
+COPY frontend ./frontend
+COPY scripts ./scripts
+COPY .sequelizerc ./
+
+# Use the compiled Tailwind from the build stage.
+COPY --from=tailwind /app/frontend/css/app.css ./frontend/css/app.css
+
+# Persist the SQLite database outside the image.
+RUN mkdir -p /app/backend/db/data \
+ && chown -R node:node /app
+USER node
+
+EXPOSE 3001
+
+# Migrations + seed run on every start so the schema is always up to date.
+# Seeding is idempotent for the demo account only.
+CMD ["sh", "-c", "npx sequelize-cli db:migrate --env development && if [ ! -f /app/backend/db/data/.seeded ]; then npx sequelize-cli db:seed:all --env development && touch /app/backend/db/data/.seeded; fi && node backend/server.js"]

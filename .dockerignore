@@ -1,0 +1,67 @@
+# Build context varies — this file applies to the root Dockerfile
+# (api + tailwind) and the prediction-service/Dockerfile.
+
+# Version control
+.git/
+.gitignore
+.github/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+prediction-service/.venv/
+prediction-service/__pycache__/
+
+# Build outputs / artifacts
+dist/
+build/
+*.tsbuildinfo
+.angular/
+.cache/
+.nx/cache
+.nx/workspace-data
+
+# Environment / secrets — never bake into images
+.env
+.env.*
+!.env.example
+
+# SQLite databases (mounted at runtime via volume)
+*.sqlite
+*.sqlite3
+backend/db/*.sqlite
+backend/db/database.sqlite
+
+# Docker artifacts (avoid recursive Docker-in-Docker)
+Dockerfile
+Dockerfile.*
+.dockerignore
+docker-compose*.yml
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Docs / scratch
+docs/
+*.md
+!README.md
